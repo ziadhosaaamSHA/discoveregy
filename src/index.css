@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #ff9f1c;
+  --color-secondary: #2b2d42;
+  --color-accent: #4d7cfe;
+  --color-soft: #fff3e0;
+  --color-muted: #6b7280;
+  --color-border: #e5e7eb;
+
+  --font-sans: "Poppins", "Inter", system-ui, sans-serif;
+
+  --shadow-card: 0px 20px 40px rgba(0, 0, 0, 0.08);
+  --shadow-btn: 0px 8px 20px rgba(255, 159, 28, 0.35);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+button {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}

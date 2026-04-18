@@ -1,0 +1,256 @@
+{
+  "meta": {
+    "project": "Discover Egypt Landing Page",
+    "type": "Marketing Landing Page",
+    "audience": "Travelers & Tourists",
+    "implementation_target": "React Web",
+    "developer_level": "Senior Frontend Engineer",
+    "design_reference_required": false
+  },
+
+  "design_system": {
+    "colors": {
+      "primary": "#FF9F1C",
+      "secondary": "#2B2D42",
+      "accent_blue": "#4D7CFE",
+      "background_main": "#FFFFFF",
+      "background_soft": "#FFF3E0",
+      "background_gradient": "linear-gradient(180deg, #F3F6FF 0%, #FFFFFF 100%)",
+      "text_primary": "#1F2937",
+      "text_secondary": "#6B7280",
+      "card_background": "#FFFFFF",
+      "border_light": "#E5E7EB"
+    },
+
+    "typography": {
+      "font_family": "Poppins, Inter, system-ui, sans-serif",
+      "headings": {
+        "h1": {
+          "font_size": "64px",
+          "line_height": "72px",
+          "font_weight": 700
+        },
+        "h2": {
+          "font_size": "40px",
+          "line_height": "48px",
+          "font_weight": 600
+        },
+        "h3": {
+          "font_size": "22px",
+          "line_height": "30px",
+          "font_weight": 600
+        }
+      },
+      "body": {
+        "font_size": "16px",
+        "line_height": "28px",
+        "font_weight": 400
+      },
+      "small": {
+        "font_size": "14px",
+        "line_height": "22px"
+      }
+    },
+
+    "spacing": {
+      "section_padding_desktop": "120px 0",
+      "section_padding_mobile": "72px 0",
+      "container_max_width": "1200px",
+      "container_padding": "24px",
+      "card_radius": "16px"
+    },
+
+    "shadows": {
+      "card": "0px 20px 40px rgba(0, 0, 0, 0.08)",
+      "button": "0px 8px 20px rgba(255, 159, 28, 0.35)"
+    }
+  },
+
+  "assets": {
+    "logo": "/public/images/DiscoverEgyptLogo",
+    "hero": {
+      "traveller": "/public/images/hero_traveller_img",
+      "airplane_left": "/public/images/left_airplane",
+      "airplane_right": "/public/images/right_up_airplane"
+    }
+  },
+
+  "layout": {
+    "grid": {
+      "desktop": "12-column grid",
+      "tablet": "8-column grid",
+      "mobile": "4-column grid"
+    },
+    "responsive_rules": {
+      "hero_stack_on_mobile": true,
+      "cards_scroll_x_on_mobile": true,
+      "font_scaling": "fluid clamp() usage"
+    }
+  },
+
+  "sections": [
+    {
+      "id": "header",
+      "type": "navigation",
+      "behavior": {
+        "sticky": true,
+        "background": "transparent → white on scroll",
+        "height": "80px"
+      },
+      "elements": [
+        "logo_left",
+        "search_input_center",
+        "nav_links: Home, Explore, About Us",
+        "auth_buttons: Login, Sign Up",
+        "language_switcher"
+      ]
+    },
+
+    {
+      "id": "hero",
+      "type": "hero_section",
+      "layout": "two_columns",
+      "left": {
+        "badge": "BEST DESTINATIONS AROUND EGYPT",
+        "heading": "Travel, enjoy and live a new and full life",
+        "description": "Short inspirational paragraph describing authentic Egyptian travel experiences.",
+        "cta_primary": "Find out more",
+        "cta_secondary": "Download Now"
+      },
+      "right": {
+        "main_visual": "hero_traveller_img",
+        "floating_elements": [
+          "mobile_app_mockup",
+          "airplane_left",
+          "airplane_right"
+        ]
+      },
+      "animations": {
+        "on_load": "fade + translateY",
+        "airplanes": "slow floating motion"
+      }
+    },
+
+    {
+      "id": "explore",
+      "type": "cards_section",
+      "title": "Explore",
+      "cards": [
+        {
+          "title": "Luxor",
+          "price": "$5.42k",
+          "duration": "10 Days Trip",
+          "image": "luxor_image"
+        },
+        {
+          "title": "Cairo",
+          "price": "$4.2k",
+          "duration": "12 Days Trip",
+          "image": "cairo_image"
+        },
+        {
+          "title": "Giza",
+          "price": "$15k",
+          "duration": "28 Days Trip",
+          "image": "giza_image"
+        }
+      ],
+      "interaction": {
+        "hover": "lift + shadow increase",
+        "click": "navigate to destination details"
+      }
+    },
+
+    {
+      "id": "about",
+      "type": "stats_section",
+      "title": "About Us",
+      "stats": [
+        {
+          "label": "Total Downloads",
+          "value": "439"
+        },
+        {
+          "label": "App Ratings",
+          "value": "5.0",
+          "sub": "out of 5",
+          "badge": "32 Ratings"
+        },
+        {
+          "label": "Conversion Rate",
+          "value": "22.7%"
+        }
+      ]
+    },
+
+    {
+      "id": "features",
+      "type": "feature_cards",
+      "cards": [
+        {
+          "title": "Exclusive Designs",
+          "description": "We work closely with talented ceramic artists to bring you exclusive and one-of-a-kind designs.",
+          "link": "Learn more"
+        },
+        {
+          "title": "Exclusive Designs",
+          "description": "Same structure repeated intentionally for design consistency.",
+          "link": "Learn more"
+        },
+        {
+          "title": "Exclusive Designs",
+          "description": "Same structure repeated intentionally for design consistency.",
+          "link": "Learn more"
+        }
+      ]
+    },
+
+    {
+      "id": "footer",
+      "type": "footer",
+      "columns": [
+        {
+          "title": "Discover Egypt",
+          "content": "We bring authentic Egyptian experiences to the world with culture, history, and adventure."
+        },
+        {
+          "title": "Useful Links",
+          "links": ["Home", "Explore", "About"]
+        },
+        {
+          "title": "Resources",
+          "links": ["Become a guide", "Support", "Help"]
+        },
+        {
+          "title": "Contact Us",
+          "email": "infomail@gmail.com",
+          "socials": ["facebook", "twitter", "youtube"]
+        }
+      ],
+      "copyright": "© 2025 DiscoverEgypt"
+    }
+  ],
+
+  "accessibility": {
+    "contrast_ratio": "WCAG AA",
+    "keyboard_navigation": true,
+    "aria_labels": true,
+    "semantic_html": true
+  },
+
+  "performance": {
+    "images": "lazy-loaded",
+    "fonts": "preloaded",
+    "animations": "GPU-accelerated",
+    "bundle_strategy": "code splitting per section"
+  },
+
+  "react_guidelines": {
+    "architecture": "section-based components",
+    "state_management": "minimal (mostly presentational)",
+    "styling": "CSS Modules or Tailwind",
+    "animations": "Framer Motion preferred",
+    "no_inline_styles": true,
+    "pure_components": true
+  }
+}
