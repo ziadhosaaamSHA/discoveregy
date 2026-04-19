@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Navigation } from "lucide-react";
 import { DESTINATIONS } from "../data/destinations";
+import { useLanguage } from "../context/LanguageContext";
 
 const FEATURED_IDS = [1, 5, 8];
 const featuredDestinations = DESTINATIONS.filter((d) =>
@@ -18,6 +19,8 @@ const cardVariants = {
 };
 
 export default function Explore() {
+  const { t, language, isRTL } = useLanguage();
+
   return (
     <section
       id="explore"
@@ -29,8 +32,8 @@ export default function Explore() {
         src="/images/right_up_airplane.png"
         alt=""
         aria-hidden="true"
-        className="absolute top-12 right-12 w-96 opacity-75 hidden lg:block"
-        animate={{ y: [0, -8, 0], rotate: [0, 5, 0] }}
+        className={`absolute top-12 ${isRTL ? 'left-12' : 'right-12'} w-96 opacity-75 hidden lg:block`}
+        animate={{ y: [0, -8, 0], rotate: [0, isRTL ? -5 : 5, 0] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
       />
 
@@ -42,51 +45,56 @@ export default function Explore() {
           viewport={{ once: true }}
           className="text-4xl lg:text-5xl font-bold text-secondary text-center mb-16"
         >
-          Explore
+          {t("common.explore")}
         </motion.h2>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featuredDestinations.map((dest, i) => (
-            <motion.article
-              key={dest.id}
-              custom={i}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={cardVariants}
-              whileHover={{ y: -8, boxShadow: "0 25px 50px rgba(0,0,0,0.12)" }}
-              className="bg-white rounded-2xl overflow-hidden shadow-card group"
-            >
-              <Link to={`/destination/${dest.id}`} className="block">
-                <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={dest.image}
-                    alt={`${dest.name} destination`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                    width={400}
-                    height={256}
-                  />
-                </div>
-
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xl font-semibold text-secondary">
-                      {dest.name}
-                    </h3>
-                    <span className="text-lg font-bold text-muted">
-                      {dest.price}
-                    </span>
+          {featuredDestinations.map((dest, i) => {
+            const data = dest.copy[language] || dest.copy.en;
+            const duration = dest.duration[language] || dest.duration.en;
+            
+            return (
+              <motion.article
+                key={dest.id}
+                custom={i}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={cardVariants}
+                whileHover={{ y: -8, boxShadow: "0 25px 50px rgba(0,0,0,0.12)" }}
+                className={`bg-white rounded-2xl overflow-hidden shadow-card group ${isRTL ? 'text-right' : 'text-left'}`}
+              >
+                <Link to={`/destination/${dest.id}`} className="block">
+                  <div className="relative h-64 overflow-hidden">
+                    <img
+                      src={dest.image}
+                      alt={`${data.name} destination`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                      width={400}
+                      height={256}
+                    />
                   </div>
 
-                  <div className="flex items-center gap-2 text-muted">
-                    <Navigation size={16} aria-hidden="true" />
-                    <span className="text-sm">{dest.duration}</span>
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-xl font-semibold text-secondary">
+                        {data.name}
+                      </h3>
+                      <span className="text-lg font-bold text-muted">
+                        {dest.price}
+                      </span>
+                    </div>
+
+                    <div className={`flex items-center gap-2 text-muted ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <Navigation size={16} className={isRTL ? 'rotate-180' : ''} aria-hidden="true" />
+                      <span className="text-sm">{duration}</span>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            </motion.article>
-          ))}
+                </Link>
+              </motion.article>
+            );
+          })}
         </div>
       </div>
 
@@ -95,8 +103,8 @@ export default function Explore() {
         src="/images/left_airplane.png"
         alt=""
         aria-hidden="true"
-        className="absolute bottom-0 left-8 w-96 -z-10 opacity-75 hidden lg:block"
-        animate={{ y: [0, 12, 0], x: [0, -5, 0] }}
+        className={`absolute bottom-0 ${isRTL ? 'right-8' : 'left-8'} w-96 -z-10 opacity-75 hidden lg:block`}
+        animate={{ y: [0, 12, 0], x: [0, isRTL ? 5 : -5, 0] }}
         transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
       />
     </section>

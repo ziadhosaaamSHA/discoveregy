@@ -2,20 +2,22 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-
-const LoginSchema = Yup.object().shape({
-  email: Yup.string().email("Invalid email").required("Email is required"),
-  password: Yup.string().min(6, "Min 6 characters").required("Password is required"),
-});
+import { useLanguage } from "../context/LanguageContext";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const { login } = useAuth();
+  const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
+
+  const LoginSchema = Yup.object().shape({
+    email: Yup.string().email(t("auth.invalidEmail")).required(t("auth.emailRequired")),
+    password: Yup.string().min(6, t("auth.passwordMin6")).required(t("auth.passwordRequired")),
+  });
 
   const handleSubmit = (values, { setSubmitting }) => {
     setError("");
@@ -24,34 +26,34 @@ export default function Login() {
     if (result.success) {
       navigate("/");
     } else {
-      setError(result.error);
+      setError(t("auth.loginError"));
     }
     setSubmitting(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className={`min-h-screen bg-gray-50 flex items-center justify-center p-4 ${isRTL ? 'text-right' : 'text-left'}`}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8"
       >
         {/* Header */}
-        <div className="flex items-center mb-8">
+        <div className={`flex items-center mb-8 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <Link
             to="/"
             className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-            aria-label="Go back"
+            aria-label={t("common.close")}
           >
-            <ArrowLeft size={20} className="text-secondary" />
+            {isRTL ? <ArrowRight size={20} className="text-secondary" /> : <ArrowLeft size={20} className="text-secondary" />}
           </Link>
-          <h1 className="flex-1 text-center text-2xl font-bold text-secondary pr-10">
-            Login now
+          <h1 className={`flex-1 text-center text-2xl font-bold text-secondary ${isRTL ? 'pl-10' : 'pr-10'}`}>
+            {t("auth.loginTitle")}
           </h1>
         </div>
 
         <p className="text-center text-muted text-sm mb-8">
-          Please sign in to continue our app
+          {t("auth.loginSubtitle")}
         </p>
 
         {error && (
@@ -71,8 +73,8 @@ export default function Login() {
                 <Field
                   name="email"
                   type="email"
-                  placeholder="www.uihut@gmail.com"
-                  className={`w-full px-4 py-3 border rounded-lg outline-none transition-colors ${
+                  placeholder={t("auth.emailAddress")}
+                  className={`w-full px-4 py-3 border rounded-lg outline-none transition-colors ${isRTL ? 'text-right' : 'text-left'} ${
                     errors.email && touched.email
                       ? "border-red-400 focus:border-red-500"
                       : "border-gray-200 focus:border-primary"
@@ -87,8 +89,8 @@ export default function Login() {
                 <Field
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className={`w-full px-4 py-3 border rounded-lg outline-none transition-colors pr-12 ${
+                  placeholder={t("auth.password")}
+                  className={`w-full px-4 py-3 border rounded-lg outline-none transition-colors ${isRTL ? 'text-right pl-12' : 'text-left pr-12'} ${
                     errors.password && touched.password
                       ? "border-red-400 focus:border-red-500"
                       : "border-gray-200 focus:border-primary"
@@ -97,8 +99,8 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-secondary"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-muted hover:text-secondary`}
+                  aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -107,12 +109,12 @@ export default function Login() {
                 )}
               </div>
 
-              <div className="text-right">
+              <div className={isRTL ? "text-left" : "text-right"}>
                 <Link
                   to="/forgot-password"
                   className="text-sm text-primary hover:underline"
                 >
-                  Forgot Password?
+                  {t("auth.forgotPassword")}
                 </Link>
               </div>
 
@@ -121,26 +123,26 @@ export default function Login() {
                 disabled={isSubmitting}
                 className="w-full py-3 bg-secondary text-white font-semibold rounded-lg hover:bg-secondary/90 transition-colors disabled:opacity-50"
               >
-                {isSubmitting ? "Logging in..." : "Login"}
+                {isSubmitting ? t("auth.loginLoading") : t("auth.loginButton")}
               </button>
             </Form>
           )}
         </Formik>
 
         <p className="mt-6 text-center text-sm text-muted">
-          Don't have an account?{" "}
+          {t("auth.noAccount")}{" "}
           <Link to="/signup" className="text-primary font-medium hover:underline">
-            Sign up
+            {t("auth.signUp")}
           </Link>
         </p>
 
         <div className="mt-6">
-          <p className="text-center text-muted text-sm mb-4">Or connect</p>
+          <p className="text-center text-muted text-sm mb-4">{t("auth.orConnect")}</p>
           <div className="flex justify-center gap-4">
             <button
               type="button"
               className="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 transition-colors"
-              aria-label="Login with Facebook"
+              aria-label={t("auth.facebook")}
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#1877F2">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
@@ -149,7 +151,7 @@ export default function Login() {
             <button
               type="button"
               className="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 transition-colors"
-              aria-label="Login with Google"
+              aria-label={t("auth.google")}
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -161,7 +163,7 @@ export default function Login() {
             <button
               type="button"
               className="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 transition-colors"
-              aria-label="Login with Instagram"
+              aria-label={t("auth.instagram")}
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24">
                 <defs>

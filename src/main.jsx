@@ -5,17 +5,20 @@ import "./index.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext";
 import { BookmarksProvider } from "./context/BookmarksContext";
+import { LanguageProvider } from "./context/LanguageContext";
 import ScrollToTop from "./components/ScrollToTop";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <ScrollToTop />
-      <AuthProvider>
-        <BookmarksProvider>
-          <App />
-        </BookmarksProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <BookmarksProvider>
+            <App />
+          </BookmarksProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </BrowserRouter>
   </StrictMode>
 );

@@ -1,11 +1,5 @@
 import { Facebook, Twitter, Youtube, Mail } from 'lucide-react';
-
-const USEFUL_LINKS = [
-  { label: 'Home', href: '#home' },
-  { label: 'Explore', href: '#explore' },
-  { label: 'About Us', href: '#about-us' },
-];
-const RESOURCES = ['Become a guide', 'Support', 'Help'];
+import { useLanguage } from "../context/LanguageContext";
 
 const SOCIAL_LINKS = [
   { id: 'facebook', icon: Facebook, label: 'Facebook', href: '#' },
@@ -14,25 +8,37 @@ const SOCIAL_LINKS = [
 ];
 
 export default function Footer() {
+  const { t, isRTL } = useLanguage();
+
+  const USEFUL_LINKS = [
+    { label: t("common.home"), href: "#home" },
+    { label: t("common.explore"), href: "#explore" },
+    { label: t("common.aboutUs"), href: "#about-us" },
+  ];
+  const RESOURCES = [
+    { label: t("footer.becomeGuide"), href: "#" },
+    { label: t("footer.support"), href: "#" },
+    { label: t("footer.help"), href: "#" },
+  ];
+
   return (
     <footer className="bg-soft pt-16 pb-8" role="contentinfo">
       <div className="max-w-[1200px] mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+        <div className={`grid grid-cols-2 md:grid-cols-4 gap-8 mb-12 ${isRTL ? 'text-right' : 'text-left'}`}>
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
             <h2 className="text-xl font-bold text-secondary mb-4">
-              Discover Egypt
+              {t("footer.brandName")}
             </h2>
             <p className="text-muted text-sm leading-relaxed">
-              We bring authentic Egyptian experiences to the world with culture,
-              history, and adventure.
+              {t("footer.brandDescription")}
             </p>
           </div>
 
           {/* Useful Links */}
           <nav aria-label="Useful links">
             <h3 className="text-lg font-semibold text-secondary mb-4">
-              Useful Links
+              {t("footer.usefulLinks")}
             </h3>
             <ul className="space-y-3">
               {USEFUL_LINKS.map((link) => (
@@ -51,16 +57,16 @@ export default function Footer() {
           {/* Resources */}
           <nav aria-label="Resources">
             <h3 className="text-lg font-semibold text-secondary mb-4">
-              Resources
+              {t("footer.resources")}
             </h3>
             <ul className="space-y-3">
               {RESOURCES.map((link) => (
-                <li key={link}>
+                <li key={link.label}>
                   <a
-                    href="#"
+                    href={link.href}
                     className="text-muted hover:text-primary transition-colors text-sm"
                   >
-                    {link}
+                    {link.label}
                   </a>
                 </li>
               ))}
@@ -70,7 +76,7 @@ export default function Footer() {
           {/* Contact */}
           <div>
             <h3 className="text-lg font-semibold text-secondary mb-4">
-              Contact Us
+              {t("footer.contactUs")}
             </h3>
             <a
               href="mailto:infomail@gmail.com"
@@ -80,7 +86,7 @@ export default function Footer() {
               <span>infomail@gmail.com</span>
             </a>
 
-            <div className="flex items-center gap-4">
+            <div className={`flex items-center gap-4 ${isRTL ? 'justify-start' : 'justify-start'}`}>
               {SOCIAL_LINKS.map((social) => (
                 <a
                   key={social.id}
@@ -97,8 +103,8 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="pt-8 border-t border-border">
-          <p className="text-muted text-sm">
-            &copy;2025 DiscoverEgypt
+          <p className={`text-muted text-sm ${isRTL ? 'text-right' : 'text-left'}`}>
+            {t("footer.copyright")}
           </p>
         </div>
       </div>

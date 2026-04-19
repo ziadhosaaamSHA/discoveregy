@@ -1,29 +1,6 @@
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
-
-const FEATURES = [
-  {
-    id: 'feature-1',
-    title: 'Exclusive Designs',
-    description:
-      'We work closely with talented ceramic artists to bring you exclusive and one-of-a-kind designs.',
-    link: 'Learn more',
-  },
-  {
-    id: 'feature-2',
-    title: 'Exclusive Designs',
-    description:
-      'We work closely with talented ceramic artists to bring you exclusive and one-of-a-kind designs.',
-    link: 'Learn more',
-  },
-  {
-    id: 'feature-3',
-    title: 'Exclusive Designs',
-    description:
-      'We work closely with talented ceramic artists to bring you exclusive and one-of-a-kind designs.',
-    link: 'Learn more',
-  },
-];
+import { useLanguage } from "../context/LanguageContext";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 30 },
@@ -35,6 +12,9 @@ const cardVariants = {
 };
 
 export default function Features() {
+  const { t, isRTL } = useLanguage();
+  const featuresItems = t("features.items");
+
   return (
     <section
       id="features"
@@ -43,19 +23,19 @@ export default function Features() {
     >
       <div className="max-w-[1200px] mx-auto px-6">
         <h2 id="features-heading" className="sr-only">
-          Our Features
+          {t("features.title")}
         </h2>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {FEATURES.map((feature, i) => (
+          {Array.isArray(featuresItems) && featuresItems.map((feature, i) => (
             <motion.article
-              key={feature.id}
+              key={i}
               custom={i}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
               variants={cardVariants}
-              className="bg-white rounded-2xl p-8 border border-border hover:shadow-card transition-shadow duration-300"
+              className={`bg-white rounded-2xl p-8 border border-border hover:shadow-card transition-shadow duration-300 ${isRTL ? 'text-right' : 'text-left'}`}
             >
               <h3 className="text-xl font-bold text-secondary mb-4">
                 {feature.title}
@@ -72,7 +52,7 @@ export default function Features() {
                 <span>{feature.link}</span>
                 <ArrowRight
                   size={16}
-                  className="group-hover:translate-x-1 transition-transform"
+                  className={`transition-transform ${isRTL ? 'rotate-180 group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`}
                   aria-hidden="true"
                 />
               </a>

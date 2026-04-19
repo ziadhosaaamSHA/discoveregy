@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,48 +13,54 @@ import {
   Info,
   User,
   UserPlus,
+  Globe,
+  Check,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useBookmarks } from "../context/BookmarksContext";
-
-const NAV_LINKS = [
-  { label: "Home", href: "#home", icon: MapPin },
-  { label: "Explore", href: "#explore", icon: Compass },
-  { label: "About Us", href: "#about-us", icon: Info },
-];
+import { useLanguage } from "../context/LanguageContext";
 
 const overlayVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
 };
 
-const drawerVariants = {
-  hidden: { x: "100%" },
+const drawerVariants = (isRTL) => ({
+  hidden: { x: isRTL ? "-100%" : "100%" },
   visible: {
     x: 0,
     transition: { type: "spring", damping: 26, stiffness: 300 },
   },
   exit: {
-    x: "100%",
+    x: isRTL ? "-100%" : "100%",
     transition: { type: "spring", damping: 30, stiffness: 350 },
   },
-};
+});
 
 const listVariants = {
   visible: { transition: { staggerChildren: 0.06, delayChildren: 0.15 } },
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, x: 30 },
+const itemVariants = (isRTL) => ({
+  hidden: { opacity: 0, x: isRTL ? -30 : 30 },
   visible: { opacity: 1, x: 0, transition: { type: "spring", damping: 20 } },
-};
+});
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const langRef = useRef(null);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { bookmarkCount } = useBookmarks();
+  const { language, setLanguage, t, supportedLanguages, isRTL } = useLanguage();
+
+  const NAV_LINKS = [
+    { label: t("common.home"), href: "#home", icon: MapPin },
+    { label: t("common.explore"), href: "#explore", icon: Compass },
+    { label: t("common.aboutUs"), href: "#about-us", icon: Info },
+  ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -62,6 +68,17 @@ export default function Header() {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Handle outside click for language dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (langRef.current && !langRef.current.contains(event.target)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Lock body scroll when menu is open
@@ -75,6 +92,8 @@ export default function Header() {
   const handleSearchClick = () => {
     navigate("/search");
   };
+
+  const activeLang = supportedLanguages.find((l) => l.code === language);
 
   return (
     <>
@@ -103,11 +122,11 @@ export default function Header() {
             type="button"
             onClick={handleSearchClick}
             className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2 gap-2 w-64 cursor-pointer hover:bg-gray-200 transition-colors"
-            aria-label="Open search"
+            aria-label={t("search.ariaLabel")}
           >
             <Search size={18} className="text-muted" aria-hidden="true" />
             <span className="text-sm text-muted">
-              What&apos;s on your mind?
+              {t("common.searchPrompt")}
             </span>
           </button>
 
@@ -132,7 +151,7 @@ export default function Header() {
             <Link
               to="/bookmarks"
               className="relative hidden sm:flex items-center justify-center w-10 h-10 text-gray-800 hover:text-primary transition-colors"
-              aria-label="My bookmarks"
+              aria-label={t("common.bookmarks")}
             >
               <Bookmark size={20} />
               {bookmarkCount > 0 && (
@@ -161,32 +180,77 @@ export default function Header() {
                   to="/login"
                   className="hidden sm:block text-gray-800 hover:text-primary transition-colors font-medium"
                 >
-                  Login
+                  {t("common.login")}
                 </Link>
                 <Link
                   to="/signup"
                   className="hidden sm:block px-6 py-2 border-2 border-secondary text-secondary rounded-lg hover:bg-secondary hover:text-white transition-colors font-medium"
                 >
-                  Sign up
+                  {t("common.signup")}
                 </Link>
               </>
             )}
 
-            <button
-              type="button"
-              className="hidden sm:flex items-center gap-1 text-muted hover:text-gray-800 transition-colors"
-              aria-label="Select language"
-            >
-              <span>EN</span>
-              <ChevronDown size={16} aria-hidden="true" />
-            </button>
+            {/* Language Selection Dropdown */}
+            <div className="relative" ref={langRef}>
+              <button
+                type="button"
+                onClick={() => setLangOpen(!langOpen)}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-muted hover:text-gray-800 hover:bg-gray-100 transition-all font-medium"
+                aria-label={t("common.selectLanguage")}
+                aria-expanded={langOpen}
+              >
+                <Globe size={18} />
+                <span>{language === 'ar' ? 'العربية' : 'English'}</span>
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform duration-200 ${
+                    langOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              <AnimatePresence>
+                {langOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    className={`absolute top-full mt-2 ${
+                      isRTL ? "left-0" : "right-0"
+                    } w-40 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-[60]`}
+                  >
+                    {supportedLanguages.map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => {
+                          setLanguage(lang.code);
+                          setLangOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
+                          language === lang.code
+                            ? "text-primary font-semibold bg-primary/5"
+                            : "text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {lang.label}
+                        {language === lang.code && (
+                          <Check size={16} className="text-primary" />
+                        )}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Mobile Hamburger */}
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
               className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl text-gray-800 hover:bg-gray-100 transition-colors"
-              aria-label="Open menu"
+              aria-label={t("common.menu")}
             >
               <Menu size={24} />
             </button>
@@ -212,22 +276,24 @@ export default function Header() {
             {/* Drawer panel */}
             <motion.div
               key="drawer"
-              variants={drawerVariants}
+              variants={drawerVariants(isRTL)}
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="fixed top-0 right-0 z-[70] h-full w-[80%] max-w-[340px] bg-white shadow-2xl flex flex-col"
+              className={`fixed top-0 ${
+                isRTL ? "left-0" : "right-0"
+              } z-[70] h-full w-[80%] max-w-[340px] bg-white shadow-2xl flex flex-col`}
             >
               {/* Drawer header */}
               <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
                 <span className="text-lg font-semibold text-secondary tracking-tight">
-                  Menu
+                  {t("common.menu")}
                 </span>
                 <button
                   type="button"
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center justify-center w-9 h-9 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-                  aria-label="Close menu"
+                  aria-label={t("common.close")}
                 >
                   <X size={20} />
                 </button>
@@ -245,7 +311,7 @@ export default function Header() {
                 >
                   <Search size={18} className="text-muted" />
                   <span className="text-sm text-muted">
-                    What&apos;s on your mind?
+                    {t("common.searchPrompt")}
                   </span>
                 </button>
               </div>
@@ -258,7 +324,7 @@ export default function Header() {
                 className="flex flex-col gap-1 px-4 pt-4"
               >
                 {NAV_LINKS.map((link) => (
-                  <motion.li key={link.label} variants={itemVariants}>
+                  <motion.li key={link.label} variants={itemVariants(isRTL)}>
                     <a
                       href={link.href}
                       onClick={() => setMobileOpen(false)}
@@ -271,14 +337,14 @@ export default function Header() {
                 ))}
 
                 {/* Bookmarks */}
-                <motion.li variants={itemVariants}>
+                <motion.li variants={itemVariants(isRTL)}>
                   <Link
                     to="/bookmarks"
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-4 px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-soft hover:text-primary transition-colors"
                   >
                     <Bookmark size={20} className="text-primary/70" />
-                    Bookmarks
+                    {t("common.bookmarks")}
                     {bookmarkCount > 0 && (
                       <span className="ml-auto w-6 h-6 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center">
                         {bookmarkCount}
@@ -303,7 +369,7 @@ export default function Header() {
                         <p className="text-sm font-semibold text-gray-800">
                           {user.name}
                         </p>
-                        <p className="text-xs text-muted">Welcome back</p>
+                        <p className="text-xs text-muted">{t("common.welcomeBack")}</p>
                       </div>
                     </div>
                     <button
@@ -315,7 +381,7 @@ export default function Header() {
                       className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
                     >
                       <LogOut size={18} />
-                      Log out
+                      {t("common.logout")}
                     </button>
                   </>
                 ) : (
@@ -326,7 +392,7 @@ export default function Header() {
                       className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-secondary text-secondary font-semibold hover:bg-secondary hover:text-white transition-colors"
                     >
                       <User size={18} />
-                      Login
+                      {t("common.login")}
                     </Link>
                     <Link
                       to="/signup"
@@ -334,19 +400,30 @@ export default function Header() {
                       className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-primary text-white font-semibold shadow-btn hover:brightness-105 transition-all"
                     >
                       <UserPlus size={18} />
-                      Sign up
+                      {t("common.signup")}
                     </Link>
                   </>
                 )}
 
-                {/* Language toggle */}
-                <button
-                  type="button"
-                  className="flex items-center justify-center gap-1 w-full py-2 text-sm text-muted hover:text-gray-800 transition-colors"
-                >
-                  <span>EN</span>
-                  <ChevronDown size={14} />
-                </button>
+                {/* Mobile Language selector */}
+                <div className="flex items-center gap-2 pt-2 px-2">
+                  {supportedLanguages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        setLanguage(lang.code);
+                        setMobileOpen(false);
+                      }}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                        language === lang.code
+                          ? "bg-secondary text-white"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      {lang.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </motion.div>
           </>

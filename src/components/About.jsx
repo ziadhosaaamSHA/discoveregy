@@ -1,27 +1,5 @@
 import { motion } from "framer-motion";
-
-const STATS = [
-  {
-    id: "downloads",
-    label: "Total Downloads",
-    value: "439",
-    gradient: "from-[#D4E4F7] to-[#F0F7FF]",
-  },
-  {
-    id: "ratings",
-    label: "App Ratings",
-    value: "5.0",
-    sub: "out of 5",
-    badge: "32 Ratings",
-    gradient: "from-[#F5F0C4] to-[#FDFBE8]",
-  },
-  {
-    id: "conversion",
-    label: "Conversion Rate",
-    value: "22.7 %",
-    gradient: "from-[#D4F0E7] to-[#E8FBF4]",
-  },
-];
+import { useLanguage } from "../context/LanguageContext";
 
 const containerVariants = {
   hidden: {},
@@ -36,6 +14,31 @@ const itemVariants = {
 };
 
 export default function About() {
+  const { t } = useLanguage();
+
+  const STATS = [
+    {
+      id: "downloads",
+      label: t("about.downloads"),
+      value: "439",
+      gradient: "from-[#D4E4F7] to-[#F0F7FF]",
+    },
+    {
+      id: "ratings",
+      label: t("about.ratings"),
+      value: "5.0",
+      sub: t("about.outOf"),
+      badge: t("about.ratingsBadge"),
+      gradient: "from-[#F5F0C4] to-[#FDFBE8]",
+    },
+    {
+      id: "conversion",
+      label: t("about.conversionRate"),
+      value: "22.7 %",
+      gradient: "from-[#D4F0E7] to-[#E8FBF4]",
+    },
+  ];
+
   return (
     <section
       id="about-us"
@@ -50,7 +53,7 @@ export default function About() {
           viewport={{ once: true }}
           className="text-4xl lg:text-5xl font-bold text-secondary text-center mb-16"
         >
-          About Us
+          {t("about.title")}
         </motion.h2>
 
         <motion.div

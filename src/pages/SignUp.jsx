@@ -13,85 +13,50 @@ import {
   Calendar,
   Languages,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 const NATIONALITIES = [
-  "Egyptian",
-  "American",
-  "British",
-  "Canadian",
-  "French",
-  "German",
-  "Italian",
-  "Spanish",
-  "Australian",
-  "Japanese",
-  "Chinese",
-  "Indian",
-  "Brazilian",
-  "Mexican",
-  "South Korean",
-  "Turkish",
-  "Russian",
-  "Saudi Arabian",
-  "Emirati",
-  "Other",
+  { value: "Egyptian", labelEn: "Egyptian", labelAr: "مصري" },
+  { value: "American", labelEn: "American", labelAr: "أمريكي" },
+  { value: "British", labelEn: "British", labelAr: "بريطاني" },
+  { value: "Canadian", labelEn: "Canadian", labelAr: "كندي" },
+  { value: "French", labelEn: "French", labelAr: "فرنسي" },
+  { value: "German", labelEn: "German", labelAr: "ألماني" },
+  { value: "Italian", labelEn: "Italian", labelAr: "إيطالي" },
+  { value: "Spanish", labelEn: "Spanish", labelAr: "إسباني" },
+  { value: "Australian", labelEn: "Australian", labelAr: "أسترالي" },
+  { value: "Japanese", labelEn: "Japanese", labelAr: "ياباني" },
+  { value: "Chinese", labelEn: "Chinese", labelAr: "صيني" },
+  { value: "Indian", labelEn: "Indian", labelAr: "هندي" },
+  { value: "Brazilian", labelEn: "Brazilian", labelAr: "برازيلي" },
+  { value: "Mexican", labelEn: "Mexican", labelAr: "مكسيكي" },
+  { value: "South Korean", labelEn: "South Korean", labelAr: "كوري جنوبي" },
+  { value: "Turkish", labelEn: "Turkish", labelAr: "تركي" },
+  { value: "Russian", labelEn: "Russian", labelAr: "روسي" },
+  { value: "Saudi Arabian", labelEn: "Saudi Arabian", labelAr: "سعودي" },
+  { value: "Emirati", labelEn: "Emirati", labelAr: "إماراتي" },
+  { value: "Other", labelEn: "Other", labelAr: "أخرى" },
 ];
 
 const LANGUAGES = [
-  "Arabic",
-  "English",
-  "French",
-  "Spanish",
-  "German",
-  "Italian",
-  "Russian",
-  "Chinese",
-  "Japanese",
-  "Portuguese",
+  { value: "Arabic", labelEn: "Arabic", labelAr: "العربية" },
+  { value: "English", labelEn: "English", labelAr: "الإنجليزية" },
+  { value: "French", labelEn: "French", labelAr: "الفرنسية" },
+  { value: "Spanish", labelEn: "Spanish", labelAr: "الإسبانية" },
+  { value: "German", labelEn: "German", labelAr: "الألمانية" },
+  { value: "Italian", labelEn: "Italian", labelAr: "الإيطالية" },
+  { value: "Russian", labelEn: "Russian", labelAr: "الروسية" },
+  { value: "Chinese", labelEn: "Chinese", labelAr: "الصينية" },
+  { value: "Japanese", labelEn: "Japanese", labelAr: "اليابانية" },
+  { value: "Portuguese", labelEn: "Portuguese", labelAr: "البرتغالية" },
 ];
 
-const GENDERS = ["Male", "Female"];
-
-const baseSchema = {
-  name: Yup.string().min(2, "Min 2 characters").required("Name is required"),
-  email: Yup.string().email("Invalid email").required("Email is required"),
-  phone: Yup.string()
-    .matches(/^[+]?[\d\s()-]{7,15}$/, "Invalid phone number")
-    .required("Phone number is required"),
-  gender: Yup.string().required("Gender is required"),
-  age: Yup.number()
-    .typeError("Must be a number")
-    .min(16, "Must be at least 16")
-    .max(100, "Invalid age")
-    .required("Age is required"),
-  password: Yup.string()
-    .min(6, "Min 6 characters")
-    .required("Password is required"),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref("password")], "Passwords must match")
-    .required("Confirm your password"),
-};
-
-const TouristSchema = Yup.object().shape({
-  ...baseSchema,
-  nationality: Yup.string().required("Nationality is required"),
-});
-
-const GuideSchema = Yup.object().shape({
-  ...baseSchema,
-  languages: Yup.array()
-    .min(1, "Select at least one language")
-    .required("Languages are required"),
-});
-
-const fieldClass = (hasError) =>
-  `w-full pl-11 pr-4 py-3 border rounded-xl outline-none transition-all text-sm ${
-    hasError
-      ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-      : "border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10"
-  }`;
+const GENDERS = [
+  { value: "Male", labelEn: "Male", labelAr: "ذكر" },
+  { value: "Female", labelEn: "Female", labelAr: "أنثى" },
+];
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
@@ -106,6 +71,51 @@ export default function SignUp() {
   const [error, setError] = useState("");
   const { signup } = useAuth();
   const navigate = useNavigate();
+  const { language, t, isRTL } = useLanguage();
+
+  const fieldClass = (hasError) =>
+    `w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm ${
+      hasError
+        ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100"
+        : "border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10"
+    }`;
+
+  const inputPadding = isRTL ? "pr-11" : "pl-11";
+  const signupSchema = useMemo(() => {
+    const baseSchema = {
+      name: Yup.string().min(2, t("auth.nameMin2")).required(t("auth.nameRequired")),
+      email: Yup.string()
+        .email(t("auth.invalidEmail"))
+        .required(t("auth.emailRequired")),
+      phone: Yup.string()
+        .matches(/^[+]?[\d\s()-]{7,15}$/, t("auth.phoneInvalid"))
+        .required(t("auth.phoneRequired")),
+      gender: Yup.string().required(t("auth.genderRequired")),
+      age: Yup.number()
+        .typeError(t("auth.ageNumber"))
+        .min(16, t("auth.ageMin"))
+        .max(100, t("auth.ageMax"))
+        .required(t("auth.ageRequired")),
+      password: Yup.string()
+        .min(6, t("auth.passwordMin6"))
+        .required(t("auth.passwordRequired")),
+      confirmPassword: Yup.string()
+        .oneOf([Yup.ref("password")], t("auth.passwordsMatch"))
+        .required(t("auth.confirmRequired")),
+    };
+
+    return userType === "tourist"
+      ? Yup.object().shape({
+          ...baseSchema,
+          nationality: Yup.string().required(t("auth.nationalityRequired")),
+        })
+      : Yup.object().shape({
+          ...baseSchema,
+          languages: Yup.array()
+            .min(1, t("auth.selectAtLeastOneLanguage"))
+            .required(t("auth.languagesRequired")),
+        });
+  }, [t, userType]);
 
   const initialValues = {
     name: "",
@@ -144,7 +154,11 @@ export default function SignUp() {
     if (result.success) {
       navigate("/");
     } else {
-      setError(result.error);
+      setError(
+        result.error === "Email already exists"
+          ? t("auth.emailExists")
+          : result.error
+      );
     }
     setSubmitting(false);
   };
@@ -157,14 +171,13 @@ export default function SignUp() {
         className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8"
       >
         <h1 className="text-center text-2xl font-bold text-secondary mb-2">
-          Create Account
+          {t("auth.createAccountTitle")}
         </h1>
         <p className="text-center text-muted text-sm mb-6">
-          Fill in your details to get started
+          {t("auth.createAccountSubtitle")}
         </p>
 
-        {/* User Type Toggle */}
-        <div className="relative flex gap-1 mb-6 bg-gray-100 rounded-xl p-1">
+        <div dir="ltr" className="relative flex gap-1 mb-6 bg-gray-100 rounded-xl p-1">
           <motion.div
             layout
             className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-secondary rounded-lg shadow-sm"
@@ -178,7 +191,7 @@ export default function SignUp() {
               userType === "tourist" ? "text-white" : "text-secondary"
             }`}
           >
-            Tourist
+            {t("auth.tourist")}
           </button>
           <button
             type="button"
@@ -187,7 +200,7 @@ export default function SignUp() {
               userType === "guide" ? "text-white" : "text-secondary"
             }`}
           >
-            Guide
+            {t("auth.guide")}
           </button>
         </div>
 
@@ -203,26 +216,24 @@ export default function SignUp() {
 
         <Formik
           initialValues={initialValues}
-          validationSchema={
-            userType === "tourist" ? TouristSchema : GuideSchema
-          }
+          validationSchema={signupSchema}
           onSubmit={handleSubmit}
-          enableReinitialize={false}
         >
           {({ errors, touched, isSubmitting, values, setFieldValue }) => (
             <Form className="space-y-4">
-              {/* Name */}
               <div>
-                <div className="relative">
+                <div className={`relative ${isRTL ? "text-right" : ""}`}>
                   <User
                     size={18}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                    className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
+                      isRTL ? "right-3.5" : "left-3.5"
+                    }`}
                   />
                   <Field
                     name="name"
                     type="text"
-                    placeholder="Full name"
-                    className={fieldClass(errors.name && touched.name)}
+                    placeholder={t("auth.namePlaceholder")}
+                    className={`${fieldClass(errors.name && touched.name)} ${inputPadding}`}
                   />
                 </div>
                 {errors.name && touched.name && (
@@ -230,18 +241,19 @@ export default function SignUp() {
                 )}
               </div>
 
-              {/* Email */}
               <div>
                 <div className="relative">
                   <Mail
                     size={18}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                    className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
+                      isRTL ? "right-3.5" : "left-3.5"
+                    }`}
                   />
                   <Field
                     name="email"
                     type="email"
-                    placeholder="Email address"
-                    className={fieldClass(errors.email && touched.email)}
+                    placeholder={t("auth.emailAddress")}
+                    className={`${fieldClass(errors.email && touched.email)} ${inputPadding}`}
                   />
                 </div>
                 {errors.email && touched.email && (
@@ -249,18 +261,19 @@ export default function SignUp() {
                 )}
               </div>
 
-              {/* Phone */}
               <div>
                 <div className="relative">
                   <Phone
                     size={18}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                    className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
+                      isRTL ? "right-3.5" : "left-3.5"
+                    }`}
                   />
                   <Field
                     name="phone"
                     type="tel"
-                    placeholder="Phone number"
-                    className={fieldClass(errors.phone && touched.phone)}
+                    placeholder={t("auth.phonePlaceholder")}
+                    className={`${fieldClass(errors.phone && touched.phone)} ${inputPadding} ${isRTL ? "text-right" : ""}`}
                   />
                 </div>
                 {errors.phone && touched.phone && (
@@ -268,29 +281,28 @@ export default function SignUp() {
                 )}
               </div>
 
-              {/* Gender & Age row */}
               <div className="flex gap-3">
                 <div className="flex-1">
                   <div className="relative">
                     <User
                       size={18}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                      className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
+                        isRTL ? "right-3.5" : "left-3.5"
+                      }`}
                     />
                     <Field
                       as="select"
                       name="gender"
                       className={`${fieldClass(
                         errors.gender && touched.gender
-                      )} appearance-none cursor-pointer ${
-                        !values.gender ? "text-muted" : ""
-                      }`}
+                      )} appearance-none cursor-pointer ${!values.gender ? "text-muted" : ""} ${inputPadding}`}
                     >
                       <option value="" disabled>
-                        Gender
+                        {t("auth.selectGender")}
                       </option>
                       {GENDERS.map((g) => (
-                        <option key={g} value={g}>
-                          {g}
+                        <option key={g.value} value={g.value}>
+                          {language === "ar" ? g.labelAr : g.labelEn}
                         </option>
                       ))}
                     </Field>
@@ -304,15 +316,17 @@ export default function SignUp() {
                   <div className="relative">
                     <Calendar
                       size={18}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                      className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
+                        isRTL ? "right-3.5" : "left-3.5"
+                      }`}
                     />
                     <Field
                       name="age"
                       type="number"
-                      placeholder="Age"
+                      placeholder={t("auth.agePlaceholder")}
                       min="16"
                       max="100"
-                      className={fieldClass(errors.age && touched.age)}
+                      className={`${fieldClass(errors.age && touched.age)} ${inputPadding}`}
                     />
                   </div>
                   {errors.age && touched.age && (
@@ -321,7 +335,6 @@ export default function SignUp() {
                 </div>
               </div>
 
-              {/* Conditional: Nationality or Languages */}
               <AnimatePresence mode="wait">
                 {userType === "tourist" ? (
                   <motion.div
@@ -334,23 +347,23 @@ export default function SignUp() {
                     <div className="relative">
                       <Globe
                         size={18}
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                        className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
+                          isRTL ? "right-3.5" : "left-3.5"
+                        }`}
                       />
                       <Field
                         as="select"
                         name="nationality"
                         className={`${fieldClass(
                           errors.nationality && touched.nationality
-                        )} appearance-none cursor-pointer ${
-                          !values.nationality ? "text-muted" : ""
-                        }`}
+                        )} appearance-none cursor-pointer ${!values.nationality ? "text-muted" : ""} ${inputPadding}`}
                       >
                         <option value="" disabled>
-                          Select nationality
+                          {t("auth.selectNationality")}
                         </option>
                         {NATIONALITIES.map((n) => (
-                          <option key={n} value={n}>
-                            {n}
+                          <option key={n.value} value={n.value}>
+                            {language === "ar" ? n.labelAr : n.labelEn}
                           </option>
                         ))}
                       </Field>
@@ -372,33 +385,33 @@ export default function SignUp() {
                     <div className="relative">
                       <Languages
                         size={18}
-                        className="absolute left-3.5 top-3 text-muted pointer-events-none"
+                        className={`absolute top-3 text-muted pointer-events-none ${
+                          isRTL ? "right-3.5" : "left-3.5"
+                        }`}
                       />
                       <div
-                        className={`w-full pl-11 pr-4 py-3 border rounded-xl transition-all min-h-[48px] ${
+                        className={`w-full px-4 py-3 border rounded-xl transition-all min-h-[48px] ${
                           errors.languages && touched.languages
                             ? "border-red-400"
                             : "border-gray-200"
-                        }`}
+                        } ${inputPadding}`}
                       >
                         {values.languages.length === 0 && (
                           <span className="text-sm text-muted">
-                            Select languages you speak
+                            {t("auth.selectLanguages")}
                           </span>
                         )}
                         <div className="flex flex-wrap gap-2">
                           {LANGUAGES.map((lang) => {
-                            const selected = values.languages.includes(lang);
+                            const selected = values.languages.includes(lang.value);
                             return (
                               <button
-                                key={lang}
+                                key={lang.value}
                                 type="button"
                                 onClick={() => {
                                   const next = selected
-                                    ? values.languages.filter(
-                                        (l) => l !== lang
-                                      )
-                                    : [...values.languages, lang];
+                                    ? values.languages.filter((l) => l !== lang.value)
+                                    : [...values.languages, lang.value];
                                   setFieldValue("languages", next);
                                 }}
                                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
@@ -407,7 +420,7 @@ export default function SignUp() {
                                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                                 }`}
                               >
-                                {lang}
+                                {language === "ar" ? lang.labelAr : lang.labelEn}
                               </button>
                             );
                           })}
@@ -423,60 +436,64 @@ export default function SignUp() {
                 )}
               </AnimatePresence>
 
-              {/* Password */}
               <div>
                 <div className="relative">
                   <Lock
                     size={18}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                    className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
+                      isRTL ? "right-3.5" : "left-3.5"
+                    }`}
                   />
                   <Field
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    className={`${fieldClass(
-                      errors.password && touched.password
-                    )} pr-12`}
+                    dir="ltr"
+                    placeholder={t("auth.password")}
+                    className={`${fieldClass(errors.password && touched.password)} !pl-11 !pr-12 text-${isRTL ? "right" : "left"}`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-secondary transition-colors"
+                    className={`absolute top-1/2 -translate-y-1/2 text-muted hover:text-secondary transition-colors ${
+                      isRTL ? "left-3" : "right-3"
+                    }`}
                     aria-label={
-                      showPassword ? "Hide password" : "Show password"
+                      showPassword ? t("auth.hidePassword") : t("auth.showPassword")
                     }
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
                 {errors.password && touched.password && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.password}
-                  </p>
+                  <p className="mt-1 text-xs text-red-500">{errors.password}</p>
                 )}
               </div>
 
-              {/* Confirm Password */}
               <div>
                 <div className="relative">
                   <Lock
                     size={18}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+                    className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
+                      isRTL ? "right-3.5" : "left-3.5"
+                    }`}
                   />
                   <Field
                     name="confirmPassword"
                     type={showConfirm ? "text" : "password"}
-                    placeholder="Confirm password"
+                    dir="ltr"
+                    placeholder={t("auth.confirmPassword")}
                     className={`${fieldClass(
                       errors.confirmPassword && touched.confirmPassword
-                    )} pr-12`}
+                    )} !pl-11 !pr-12 text-${isRTL ? "right" : "left"}`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-secondary transition-colors"
+                    className={`absolute top-1/2 -translate-y-1/2 text-muted hover:text-secondary transition-colors ${
+                      isRTL ? "left-3" : "right-3"
+                    }`}
                     aria-label={
-                      showConfirm ? "Hide password" : "Show password"
+                      showConfirm ? t("auth.hidePassword") : t("auth.showPassword")
                     }
                   >
                     {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -494,19 +511,16 @@ export default function SignUp() {
                 disabled={isSubmitting}
                 className="w-full py-3.5 bg-secondary text-white font-semibold rounded-xl hover:bg-secondary/90 transition-colors disabled:opacity-50 mt-4 shadow-sm"
               >
-                {isSubmitting ? "Creating account..." : "Create Account"}
+                {isSubmitting ? t("auth.createLoading") : t("auth.createButton")}
               </button>
             </Form>
           )}
         </Formik>
 
         <p className="mt-6 text-center text-sm text-muted">
-          Already have an account?{" "}
-          <Link
-            to="/login"
-            className="text-primary font-medium hover:underline"
-          >
-            Sign in
+          {t("auth.alreadyHaveAccount")}{" "}
+          <Link to="/login" className="text-primary font-medium hover:underline">
+            {t("auth.signIn")}
           </Link>
         </p>
 
@@ -516,14 +530,14 @@ export default function SignUp() {
               <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-3 bg-white text-muted">Or connect with</span>
+              <span className="px-3 bg-white text-muted">{t("auth.orConnectWith")}</span>
             </div>
           </div>
           <div className="flex justify-center gap-4">
             <button
               type="button"
               className="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 hover:shadow-sm transition-all"
-              aria-label="Sign up with Facebook"
+              aria-label={`${t("auth.signUp")} ${t("auth.facebook")}`}
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#1877F2">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
@@ -532,41 +546,23 @@ export default function SignUp() {
             <button
               type="button"
               className="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 hover:shadow-sm transition-all"
-              aria-label="Sign up with Google"
+              aria-label={`${t("auth.signUp")} ${t("auth.google")}`}
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
             </button>
             <button
               type="button"
               className="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 hover:shadow-sm transition-all"
-              aria-label="Sign up with Instagram"
+              aria-label={`${t("auth.signUp")} ${t("auth.instagram")}`}
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24">
                 <defs>
-                  <linearGradient
-                    id="ig-gradient"
-                    x1="0%"
-                    y1="100%"
-                    x2="100%"
-                    y2="0%"
-                  >
+                  <linearGradient id="ig-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#FFDC80" />
                     <stop offset="50%" stopColor="#F56040" />
                     <stop offset="100%" stopColor="#C13584" />

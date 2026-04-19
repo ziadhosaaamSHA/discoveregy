@@ -1,0 +1,8 @@
+node_modules
+graphify-out
+.codex
+.gemini
+.graphify_chunks.json
+.graphify_python
+GEMINI.md
+AGENTS.md
