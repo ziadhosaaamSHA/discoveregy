@@ -57,9 +57,9 @@ export default function Header() {
   const { language, setLanguage, t, supportedLanguages, isRTL } = useLanguage();
 
   const NAV_LINKS = [
-    { label: t("common.home"), href: "#home", icon: MapPin },
-    { label: t("common.explore"), href: "#explore", icon: Compass },
-    { label: t("common.aboutUs"), href: "#about-us", icon: Info },
+    { label: t("common.home"), href: user ? "/home" : "/", icon: MapPin },
+    { label: t("common.explore"), href: user ? "/home#explore" : "/#explore", icon: Compass },
+    { label: t("common.aboutUs"), href: user ? "/home#about-us" : "/#about-us", icon: Info },
   ];
 
   useEffect(() => {
@@ -135,12 +135,12 @@ export default function Header() {
             <ul className="flex items-center gap-8">
               {NAV_LINKS.map(({ label, href }) => (
                 <li key={label}>
-                  <a
-                    href={href}
+                  <Link
+                    to={href}
                     className="text-gray-800 hover:text-primary transition-colors font-medium"
                   >
                     {label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -325,14 +325,14 @@ export default function Header() {
               >
                 {NAV_LINKS.map((link) => (
                   <motion.li key={link.label} variants={itemVariants(isRTL)}>
-                    <a
-                      href={link.href}
+                    <Link
+                      to={link.href}
                       onClick={() => setMobileOpen(false)}
                       className="flex items-center gap-4 px-4 py-3 rounded-xl text-gray-700 font-medium hover:bg-soft hover:text-primary transition-colors"
                     >
                       <link.icon size={20} className="text-primary/70" />
                       {link.label}
-                    </a>
+                    </Link>
                   </motion.li>
                 ))}
 

@@ -159,7 +159,7 @@ export default function SignUp() {
 
     const result = signup(values.firstName + " " + values.lastName, values.email, values.password, userType, extra);
     if (result.success) {
-      navigate("/");
+      navigate("/home");
     } else {
       setError(result.error === "Email already exists" ? t("auth.emailExists") : result.error);
     }

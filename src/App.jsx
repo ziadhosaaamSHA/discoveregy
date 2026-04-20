@@ -11,7 +11,11 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import Bookmarks from "./pages/Bookmarks";
 import Demo from "./pages/Demo";
+import Home from "./pages/Home";
+import PayPage from "./pages/Pay";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { FloatingChatWidget } from "./components/ui/floating-chat-widget";
+import BookingForm from "./pages/Pay";
 
 function HomePage() {
   return (
@@ -36,6 +40,10 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/home" element={<Home />} />
+          <Route path="/pay" element={<BookingForm />} />
+        </Route>
         <Route path="/search" element={<SearchResults />} />
         <Route path="/destination/:id" element={<DestinationDetail />} />
         <Route path="/login" element={<Login />} />

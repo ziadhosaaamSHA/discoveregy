@@ -32,7 +32,7 @@ export default function Login() {
     setError("");
     const result = login(values.email, values.password);
     if (result.success) {
-      navigate("/");
+      navigate("/home");
     } else {
       setError(t("auth.loginError"));
     }

@@ -8,7 +8,6 @@ import {
 import { DESTINATIONS, COMMENTS } from "../data/destinations";
 import { useBookmarks } from "../context/BookmarksContext";
 import { useLanguage } from "../context/LanguageContext";
-import BookingModal from "../components/BookingModal";
 
 // Figma back icon
 const imgBackIcon = "http://localhost:3845/assets/6235413aa7ab9a66ee4722fb5888215567271838.svg";
@@ -18,8 +17,12 @@ export default function DestinationDetail() {
   const navigate     = useNavigate();
   const { isBookmarked, toggleBookmark } = useBookmarks();
   const { t, language, isRTL }           = useLanguage();
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
   const carouselRef  = useRef(null);
+
+  // Handle drag-to-scroll
+  const [isDown, setIsDown] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   const destination = DESTINATIONS.find((d) => d.id === Number(id));
   const bookmarked  = destination ? isBookmarked(destination.id) : false;
@@ -53,26 +56,6 @@ export default function DestinationDetail() {
   const scrollCarousel = (dir) => {
     if (!carouselRef.current) return;
     carouselRef.current.scrollBy({ left: dir * 260, behavior: "smooth" });
-  };
-
-  // Handle drag-to-scroll
-  const [isDown, setIsDown] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-
-  const handleMouseDown = (e) => {
-    setIsDown(true);
-    setStartX(e.pageX - carouselRef.current.offsetLeft);
-    setScrollLeft(carouselRef.current.scrollLeft);
-  };
-  const handleMouseLeave = () => setIsDown(false);
-  const handleMouseUp = () => setIsDown(false);
-  const handleMouseMove = (e) => {
-    if (!isDown) return;
-    e.preventDefault();
-    const x = e.pageX - carouselRef.current.offsetLeft;
-    const walk = (x - startX) * 2;
-    carouselRef.current.scrollLeft = scrollLeft - walk;
   };
 
   return (
@@ -149,11 +132,7 @@ export default function DestinationDetail() {
           </div>
           <div
             ref={carouselRef}
-            className="flex gap-4 overflow-x-auto pb-4 px-8 cursor-grab active:cursor-grabbing"
-            onMouseDown={handleMouseDown}
-            onMouseLeave={handleMouseLeave}
-            onMouseUp={handleMouseUp}
-            onMouseMove={handleMouseMove}
+            className="flex gap-4 overflow-x-auto pb-4 px-8"
             style={{
               scrollbarWidth: "none",
               msOverflowStyle: "none",
@@ -199,9 +178,10 @@ export default function DestinationDetail() {
             </p>
 
             <div className={`flex items-center gap-3 ${isRTL ? "flex-row-reverse" : ""}`}>
+              {/* Book Now — Figma: rounded rectangle 173×48, #d4800b */}
               <button
                 type="button"
-                onClick={() => setIsBookingOpen(true)}
+                onClick={() => navigate("/pay")}
                 className="font-semibold text-white transition-all hover:brightness-110"
                 style={{
                   backgroundColor: "#d4800b",
@@ -282,13 +262,6 @@ export default function DestinationDetail() {
 
         <div className="h-10" />
       </main>
-
-      {/* Booking modal */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-        destination={destination}
-      />
     </div>
   );
 }

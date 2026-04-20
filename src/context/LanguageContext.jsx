@@ -29,7 +29,8 @@ const TRANSLATIONS = {
       close: "Close",
       welcomeBack: "Welcome back",
       loading: "Loading...",
-      selectLanguage: "Select language"
+      selectLanguage: "Select language",
+      cancel: "Cancel",
     },
     hero: {
       badge: "Best Destinations Around Egypt",
@@ -132,6 +133,7 @@ const TRANSLATIONS = {
       passwordRequired: "Password is required",
       loginError: "Invalid email or password",
       emailExists: "Email already exists",
+      bookingInstructions: "Fill in your details to complete your booking",
       nameRequired: "Name is required",
       phoneInvalid: "Invalid phone number",
       phoneRequired: "Phone number is required",
@@ -172,6 +174,8 @@ const TRANSLATIONS = {
       viewLocation: "View location",
       verified: "Verified",
       photos: "Photos",
+      currentActivities: "Current Activities",
+      popularAttractions: "Popular Attractions",
     },
     booking: {
       title: "Book Your Trip",
@@ -185,13 +189,14 @@ const TRANSLATIONS = {
       address: "Address",
       tripDate: "Trip Date",
       paymentMethod: "Payment Method",
-      submit: "Submit Booking Request",
+      submit: "Submit",
       submitting: "Submitting...",
       namePlaceholder: "Enter your full name",
       phonePlaceholder: "01xxxxxxxxx",
       addressPlaceholder: "Enter your full address",
       selectPayment: "Select a payment method",
       paymentRequired: "Payment method is required",
+      bookingInstructions: "Fill in your details to complete your booking",
       paymentOptions: {
         instapay: { name: "InstaPay", description: "Pay via InstaPay" },
         vodafone_cash: {
@@ -241,7 +246,8 @@ const TRANSLATIONS = {
       close: "إغلاق",
       welcomeBack: "مرحبًا بعودتك",
       loading: "جارٍ التحميل...",
-      selectLanguage: "اختر اللغة"
+      selectLanguage: "اختر اللغة",
+      cancel: "إلغاء",
     },
     hero: {
       badge: "أفضل الوجهات حول مصر",
@@ -344,6 +350,7 @@ const TRANSLATIONS = {
       passwordRequired: "كلمة المرور مطلوبة",
       loginError: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
       emailExists: "البريد الإلكتروني موجود بالفعل",
+      bookingInstructions: "أدخل بياناتك لإكمال عملية الحجز",
       nameRequired: "الاسم مطلوب",
       phoneInvalid: "رقم الهاتف غير صحيح",
       phoneRequired: "رقم الهاتف مطلوب",
@@ -356,6 +363,9 @@ const TRANSLATIONS = {
       nationalityEgyptian: "مصري",
       genderMale: "ذكر",
       genderFemale: "أنثى",
+    },
+    booking: {
+      bookingInstructions: "أدخل بياناتك لإكمال عملية الحجز",
     },
     search: {
       placeholder: "ابحث عن الوجهات...",
@@ -383,6 +393,8 @@ const TRANSLATIONS = {
       viewLocation: "عرض الموقع",
       verified: "موثّق",
       photos: "صور",
+      currentActivities: "الأنشطة الحالية",
+      popularAttractions: "مناطق الجذب الشهيرة",
     },
     booking: {
       title: "احجز رحلتك",
@@ -403,6 +415,7 @@ const TRANSLATIONS = {
       addressPlaceholder: "أدخل عنوانك الكامل",
       selectPayment: "اختر طريقة الدفع",
       paymentRequired: "طريقة الدفع مطلوبة",
+      bookingInstructions: "أدخل بياناتك لإكمال عملية الحجز",
       paymentOptions: {
         instapay: { name: "إنستا باي", description: "ادفع عبر إنستا باي" },
         vodafone_cash: {
