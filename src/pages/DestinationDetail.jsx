@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -20,9 +20,6 @@ export default function DestinationDetail() {
   const carouselRef  = useRef(null);
 
   // Handle drag-to-scroll
-  const [isDown, setIsDown] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
 
   const destination = DESTINATIONS.find((d) => d.id === Number(id));
   const bookmarked  = destination ? isBookmarked(destination.id) : false;
@@ -139,7 +136,7 @@ export default function DestinationDetail() {
               WebkitOverflowScrolling: "touch",
             }}
           >
-            {carouselImages.map((img, i) => (
+            {carouselImages.map((img) => (
               <motion.div
                 key={img.id}
                 className="flex-shrink-0 overflow-hidden"
@@ -234,7 +231,7 @@ export default function DestinationDetail() {
               {t("destination.comments")}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {COMMENTS.map((comment, i) => {
+              {COMMENTS.map((comment) => {
                 const reviewData = comment.copy.en;
                 return (
                   <div

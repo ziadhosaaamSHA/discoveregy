@@ -350,7 +350,6 @@ const TRANSLATIONS = {
       passwordRequired: "كلمة المرور مطلوبة",
       loginError: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
       emailExists: "البريد الإلكتروني موجود بالفعل",
-      bookingInstructions: "أدخل بياناتك لإكمال عملية الحجز",
       nameRequired: "الاسم مطلوب",
       phoneInvalid: "رقم الهاتف غير صحيح",
       phoneRequired: "رقم الهاتف مطلوب",
@@ -365,9 +364,6 @@ const TRANSLATIONS = {
       genderFemale: "أنثى",
     },
     booking: {
-      bookingInstructions: "أدخل بياناتك لإكمال عملية الحجز",
-    },
-    search: {
       placeholder: "ابحث عن الوجهات...",
       ariaLabel: "البحث عن الوجهات",
       noResultsTitle: "لا توجد وجهات",
@@ -396,11 +392,6 @@ const TRANSLATIONS = {
       currentActivities: "الأنشطة الحالية",
       popularAttractions: "مناطق الجذب الشهيرة",
     },
-    booking: {
-      title: "احجز رحلتك",
-      confirmedTitle: "تم تأكيد الحجز!",
-      thankYou: "شكرًا لك!",
-      submitted: "تم إرسال طلب الحجز الخاص بك إلى {{name}}.",
       contactSoon: "سنتواصل معك قريبًا لتأكيد الحجز.",
       done: "تم",
       fullName: "الاسم الكامل",
@@ -440,8 +431,7 @@ const TRANSLATIONS = {
       selectOneLanguage: "اختر لغة واحدة على الأقل",
       selectNationality: "الجنسية مطلوبة",
     },
-  },
-};
+  };
 
 const LanguageContext = createContext(null);
 

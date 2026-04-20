@@ -16,7 +16,8 @@ import {
 import { useLanguage } from "../context/LanguageContext";
 
 // ── Input field component ──
-function InputField({ icon: Icon, placeholder, type = "text", name, errors, touched }) {
+function InputField(props) {
+  const { icon: Icon, placeholder, type = "text", name, errors, touched } = props;
   return (
     <div className="flex flex-col gap-1">
       <div

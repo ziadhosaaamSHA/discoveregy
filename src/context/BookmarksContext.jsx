@@ -1,22 +1,18 @@
-import { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
-
-const BookmarksContext = createContext(null);
+import { useState, useMemo, useCallback } from "react";
+import { BookmarksContext, useBookmarks } from "./bookmarksBase";
 
 const STORAGE_KEY = "degy_bookmarks";
 
 export function BookmarksProvider({ children }) {
-  const [bookmarks, setBookmarks] = useState([]);
-
-  useEffect(() => {
+  const [bookmarks, setBookmarks] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setBookmarks(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      }
+    try {
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+      return [];
     }
-  }, []);
+  });
 
   const saveToStorage = useCallback((newBookmarks) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newBookmarks));
@@ -74,10 +70,4 @@ export function BookmarksProvider({ children }) {
   );
 }
 
-export function useBookmarks() {
-  const context = useContext(BookmarksContext);
-  if (!context) {
-    throw new Error("useBookmarks must be used within BookmarksProvider");
-  }
-  return context;
-}
+export { useBookmarks };

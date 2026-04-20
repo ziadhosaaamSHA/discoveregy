@@ -93,7 +93,6 @@ export default function Header() {
     navigate("/search");
   };
 
-  const activeLang = supportedLanguages.find((l) => l.code === language);
 
   return (
     <>

@@ -1,24 +1,18 @@
-import { createContext, useContext, useState, useEffect, useMemo } from "react";
-
-const AuthContext = createContext(null);
+import { useState, useMemo } from "react";
+import { AuthContext, useAuth } from "./authBase";
 
 const STORAGE_KEY = "degy_auth";
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
+  const [user, setUser] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      }
+    try {
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
     }
-    setIsLoading(false);
-  }, []);
+  });
 
   const login = (email, password) => {
     const users = JSON.parse(localStorage.getItem("degy_users") || "[]");
@@ -73,17 +67,11 @@ export function AuthProvider({ children }) {
   };
 
   const value = useMemo(
-    () => ({ user, isLoading, login, signup, logout, isAuthenticated: !!user }),
-    [user, isLoading]
+    () => ({ user, login, signup, logout, isAuthenticated: !!user }),
+    [user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
-}
+export { useAuth };

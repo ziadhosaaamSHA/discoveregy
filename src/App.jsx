@@ -12,7 +12,6 @@ import SignUp from "./pages/SignUp";
 import Bookmarks from "./pages/Bookmarks";
 import Demo from "./pages/Demo";
 import Home from "./pages/Home";
-import PayPage from "./pages/Pay";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { FloatingChatWidget } from "./components/ui/floating-chat-widget";
 import BookingForm from "./pages/Pay";

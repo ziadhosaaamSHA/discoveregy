@@ -106,8 +106,6 @@ export function FloatingChatWidget() {
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput("");
-    const currentInput = input;
-    const currentImage = selectedImage;
     
     // Clear UI now to show we're processing
     clearImage();
@@ -135,13 +133,13 @@ Style: Be helpful, welcoming, and professional. Use markdown for better presenta
 
       let searchContext = "";
       const searchKeywords = ["weather", "time to visit", "diving", "conditions", "events", "temperature", "best time", "how to get to"];
-      if (searchKeywords.some(kw => (currentInput || "").toLowerCase().includes(kw))) {
+      if (searchKeywords.some(kw => (userMessage.content || "").toLowerCase().includes(kw))) {
         const searchRes = await fetch("/api/tavily", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+            body: JSON.stringify({
             api_key: TAVILY_API_KEY,
-            query: currentInput,
+            query: userMessage.content,
             search_depth: "advanced"
           })
         });
