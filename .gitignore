@@ -8,3 +8,4 @@ GEMINI.md
 AGENTS.md
 .env
 CHAT_ASSISTANT_HANDOVER.md
+dist/
