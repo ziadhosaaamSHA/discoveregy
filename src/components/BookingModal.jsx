@@ -3,42 +3,44 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { X, CheckCircle, CreditCard, Smartphone } from "lucide-react";
-
-const BookingSchema = Yup.object().shape({
-  name: Yup.string()
-    .min(2, "Name must be at least 2 characters")
-    .required("Name is required"),
-  phone: Yup.string()
-    .matches(/^[0-9]{10,15}$/, "Enter a valid phone number")
-    .required("Phone number is required"),
-  address: Yup.string()
-    .min(10, "Please enter a complete address")
-    .required("Address is required"),
-  date: Yup.date()
-    .min(new Date(), "Date must be in the future")
-    .required("Date is required"),
-  paymentMethod: Yup.string()
-    .oneOf(["instapay", "vodafone_cash"], "Select a payment method")
-    .required("Payment method is required"),
-});
-
-const PAYMENT_METHODS = [
-  {
-    id: "instapay",
-    name: "InstaPay",
-    icon: CreditCard,
-    description: "Pay via InstaPay",
-  },
-  {
-    id: "vodafone_cash",
-    name: "Vodafone Cash",
-    icon: Smartphone,
-    description: "Pay via Vodafone Cash",
-  },
-];
+import { useLanguage } from "../context/LanguageContext";
 
 export default function BookingModal({ isOpen, onClose, destination }) {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const { t, language, isRTL } = useLanguage();
+
+  const BookingSchema = Yup.object().shape({
+    name: Yup.string()
+      .min(2, t("validation.nameMin2"))
+      .required(t("validation.required")),
+    phone: Yup.string()
+      .matches(/^[0-9]{10,15}$/, t("validation.phoneInvalid"))
+      .required(t("validation.required")),
+    address: Yup.string()
+      .min(10, t("validation.addressMin"))
+      .required(t("validation.required")),
+    date: Yup.date()
+      .min(new Date(), t("validation.futureDate"))
+      .required(t("validation.required")),
+    paymentMethod: Yup.string()
+      .oneOf(["instapay", "vodafone_cash"], t("validation.paymentMethodRequired"))
+      .required(t("validation.paymentMethodRequired")),
+  });
+
+  const PAYMENT_METHODS = [
+    {
+      id: "instapay",
+      name: t("booking.paymentOptions.instapay.name"),
+      icon: CreditCard,
+      description: t("booking.paymentOptions.instapay.description"),
+    },
+    {
+      id: "vodafone_cash",
+      name: t("booking.paymentOptions.vodafone_cash.name"),
+      icon: Smartphone,
+      description: t("booking.paymentOptions.vodafone_cash.description"),
+    },
+  ];
 
   const handleSubmit = (values, { setSubmitting, resetForm }) => {
     // Simulate API call
@@ -56,6 +58,8 @@ export default function BookingModal({ isOpen, onClose, destination }) {
   };
 
   if (!isOpen) return null;
+
+  const destData = destination.copy[language] || destination.copy.en;
 
   return (
     <AnimatePresence>
@@ -75,17 +79,17 @@ export default function BookingModal({ isOpen, onClose, destination }) {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-lg bg-white rounded-2xl shadow-2xl z-50 overflow-hidden max-h-[90vh] flex flex-col"
+            className={`fixed inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-lg bg-white rounded-2xl shadow-2xl z-50 overflow-hidden max-h-[90vh] flex flex-col ${isRTL ? 'text-right' : 'text-left'}`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+            <div className={`flex items-center justify-between p-6 border-b border-gray-100 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <h2 className="text-xl font-bold text-secondary">
-                {isSubmitted ? "Booking Confirmed!" : "Book Your Trip"}
+                {isSubmitted ? t("booking.confirmedTitle") : t("booking.title")}
               </h2>
               <button
                 onClick={handleClose}
                 className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Close modal"
+                aria-label={t("common.close")}
               >
                 <X size={20} className="text-muted" />
               </button>
@@ -103,39 +107,35 @@ export default function BookingModal({ isOpen, onClose, destination }) {
                     <CheckCircle size={40} className="text-green-500" />
                   </div>
                   <h3 className="text-xl font-semibold text-secondary mb-2">
-                    Thank You!
+                    {t("booking.thankYou")}
                   </h3>
                   <p className="text-muted mb-2">
-                    Your booking request for{" "}
-                    <span className="font-semibold text-secondary">
-                      {destination.name}
-                    </span>{" "}
-                    has been submitted.
+                    {t("booking.submitted", { name: destData.name })}
                   </p>
                   <p className="text-sm text-muted mb-6">
-                    We will contact you shortly to confirm your reservation.
+                    {t("booking.contactSoon")}
                   </p>
                   <button
                     onClick={handleClose}
                     className="px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:brightness-110 transition-all"
                   >
-                    Done
+                    {t("booking.done")}
                   </button>
                 </motion.div>
               ) : (
                 <>
                   {/* Destination Info */}
-                  <div className="flex gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
+                  <div className={`flex gap-4 mb-6 p-4 bg-gray-50 rounded-xl ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <img
                       src={destination.image}
-                      alt={destination.name}
+                      alt={destData.name}
                       className="w-20 h-20 rounded-lg object-cover"
                     />
-                    <div>
+                    <div className="flex-1">
                       <h3 className="font-semibold text-secondary">
-                        {destination.name}
+                        {destData.name}
                       </h3>
-                      <p className="text-sm text-muted">{destination.location}</p>
+                      <p className="text-sm text-muted">{destData.location}</p>
                       <p className="text-primary font-bold mt-1">
                         {destination.price}
                       </p>
@@ -162,14 +162,14 @@ export default function BookingModal({ isOpen, onClose, destination }) {
                             htmlFor="name"
                             className="block text-sm font-medium text-secondary mb-1"
                           >
-                            Full Name
+                            {t("booking.fullName")}
                           </label>
                           <Field
                             id="name"
                             name="name"
                             type="text"
-                            placeholder="Enter your full name"
-                            className={`w-full px-4 py-3 border rounded-lg outline-none transition-colors ${
+                            placeholder={t("booking.namePlaceholder")}
+                            className={`w-full px-4 py-3 border rounded-lg outline-none transition-colors ${isRTL ? 'text-right' : 'text-left'} ${
                               errors.name && touched.name
                                 ? "border-red-400 focus:border-red-500"
                                 : "border-gray-200 focus:border-primary"
@@ -186,14 +186,14 @@ export default function BookingModal({ isOpen, onClose, destination }) {
                             htmlFor="phone"
                             className="block text-sm font-medium text-secondary mb-1"
                           >
-                            Phone Number
+                            {t("booking.phoneNumber")}
                           </label>
                           <Field
                             id="phone"
                             name="phone"
                             type="tel"
-                            placeholder="01xxxxxxxxx"
-                            className={`w-full px-4 py-3 border rounded-lg outline-none transition-colors ${
+                            placeholder={t("booking.phonePlaceholder")}
+                            className={`w-full px-4 py-3 border rounded-lg outline-none transition-colors ${isRTL ? 'text-right' : 'text-left'} ${
                               errors.phone && touched.phone
                                 ? "border-red-400 focus:border-red-500"
                                 : "border-gray-200 focus:border-primary"
@@ -210,15 +210,15 @@ export default function BookingModal({ isOpen, onClose, destination }) {
                             htmlFor="address"
                             className="block text-sm font-medium text-secondary mb-1"
                           >
-                            Address
+                            {t("booking.address")}
                           </label>
                           <Field
                             as="textarea"
                             id="address"
                             name="address"
                             rows={2}
-                            placeholder="Enter your full address"
-                            className={`w-full px-4 py-3 border rounded-lg outline-none transition-colors resize-none ${
+                            placeholder={t("booking.addressPlaceholder")}
+                            className={`w-full px-4 py-3 border rounded-lg outline-none transition-colors resize-none ${isRTL ? 'text-right' : 'text-left'} ${
                               errors.address && touched.address
                                 ? "border-red-400 focus:border-red-500"
                                 : "border-gray-200 focus:border-primary"
@@ -237,14 +237,14 @@ export default function BookingModal({ isOpen, onClose, destination }) {
                             htmlFor="date"
                             className="block text-sm font-medium text-secondary mb-1"
                           >
-                            Trip Date
+                            {t("booking.tripDate")}
                           </label>
                           <Field
                             id="date"
                             name="date"
                             type="date"
                             min={new Date().toISOString().split("T")[0]}
-                            className={`w-full px-4 py-3 border rounded-lg outline-none transition-colors ${
+                            className={`w-full px-4 py-3 border rounded-lg outline-none transition-colors ${isRTL ? 'text-right' : 'text-left'} ${
                               errors.date && touched.date
                                 ? "border-red-400 focus:border-red-500"
                                 : "border-gray-200 focus:border-primary"
@@ -258,7 +258,7 @@ export default function BookingModal({ isOpen, onClose, destination }) {
                         {/* Payment Method */}
                         <div>
                           <label className="block text-sm font-medium text-secondary mb-2">
-                            Payment Method
+                            {t("booking.paymentMethod")}
                           </label>
                           <div className="grid grid-cols-2 gap-3">
                             {PAYMENT_METHODS.map((method) => (
@@ -305,7 +305,7 @@ export default function BookingModal({ isOpen, onClose, destination }) {
                           disabled={isSubmitting}
                           className="w-full py-3 bg-primary text-white font-semibold rounded-xl hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                         >
-                          {isSubmitting ? "Submitting..." : "Submit Booking Request"}
+                          {isSubmitting ? t("booking.submitting") : t("booking.submit")}
                         </button>
                       </Form>
                     )}

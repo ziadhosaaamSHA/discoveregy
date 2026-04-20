@@ -25,15 +25,13 @@ export default function SearchResults() {
     if (!lowerQuery) return DESTINATIONS;
     
     return DESTINATIONS.filter((dest) => {
-      const name = (dest.name || "").toLowerCase();
-      const nameAr = (dest.name_ar || "").toLowerCase();
-      const loc = (dest.location || "").toLowerCase();
-      const locAr = (dest.location_ar || "").toLowerCase();
+      const en = dest.copy.en;
+      const ar = dest.copy.ar;
       
-      return name.includes(lowerQuery) || 
-             nameAr.includes(lowerQuery) || 
-             loc.includes(lowerQuery) || 
-             locAr.includes(lowerQuery);
+      return en.name.toLowerCase().includes(lowerQuery) || 
+             en.location.toLowerCase().includes(lowerQuery) || 
+             ar.name.toLowerCase().includes(lowerQuery) || 
+             ar.location.toLowerCase().includes(lowerQuery);
     });
   }, [query]);
 
@@ -85,8 +83,7 @@ export default function SearchResults() {
         {filteredDestinations.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {filteredDestinations.map((dest, i) => {
-              const name = language === 'ar' ? dest.name_ar : dest.name;
-              const location = language === 'ar' ? dest.location_ar : dest.location;
+              const data = dest.copy[language] || dest.copy.en;
               return (
                 <motion.div
                   key={dest.id}
@@ -102,7 +99,7 @@ export default function SearchResults() {
                     <div className="aspect-square rounded-2xl overflow-hidden mb-3 bg-gray-100">
                       <img
                         src={dest.image}
-                        alt={name}
+                        alt={data.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                         loading="lazy"
                         width={200}
@@ -110,9 +107,9 @@ export default function SearchResults() {
                       />
                     </div>
                     <p className="text-sm font-medium text-secondary truncate">
-                      {name}
+                      {data.name}
                     </p>
-                    <p className="text-xs text-muted truncate">{location}</p>
+                    <p className="text-xs text-muted truncate">{data.location}</p>
                   </Link>
                 </motion.div>
               );

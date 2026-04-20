@@ -10,13 +10,21 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@radix-ui/react-avatar": "^1.1.11",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-slot": "^1.2.4",
     "@tailwindcss/vite": "^4.1.18",
+    "@tavily/core": "^0.7.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "formik": "^2.4.9",
-    "framer-motion": "^12.32.0",
+    "framer-motion": "^12.38.0",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.13.0",
+    "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.1.18",
     "yup": "^1.7.1"
   },

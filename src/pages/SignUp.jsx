@@ -17,116 +17,130 @@ import { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
+// ── Figma assets (same page, same beige card) ──
+const imgBackground    = "http://localhost:3845/assets/60854d0f90c724d6a8d1ba05aa4e38b870012968.png";
+const imgSmartphone    = "http://localhost:3845/assets/c8c5dd0d1c7608aaca2f024c896b513ec2017668.png";
+const imgTraveller     = "http://localhost:3845/assets/c8dfa6312c2d8ae9f9373b8ebeb680371e67d3a1.png";
+const imgBackIcon      = "http://localhost:3845/assets/6235413aa7ab9a66ee4722fb5888215567271838.svg";
+const imgDeviconGoogle = "http://localhost:3845/assets/999bcb7d25735ca4686374c0705b5e744ead0ba8.svg";
+const imgInstagram     = "http://localhost:3845/assets/87e560a6cf646bc9e704bfcb99191e4086b80c9d.svg";
+const imgFacebook      = "http://localhost:3845/assets/3a5b2589104f8c803aa1fc6cf148dada39e075d8.svg";
+
+// ── Data (unchanged from original) ──
 const NATIONALITIES = [
-  { value: "Egyptian", labelEn: "Egyptian", labelAr: "مصري" },
-  { value: "American", labelEn: "American", labelAr: "أمريكي" },
-  { value: "British", labelEn: "British", labelAr: "بريطاني" },
-  { value: "Canadian", labelEn: "Canadian", labelAr: "كندي" },
-  { value: "French", labelEn: "French", labelAr: "فرنسي" },
-  { value: "German", labelEn: "German", labelAr: "ألماني" },
-  { value: "Italian", labelEn: "Italian", labelAr: "إيطالي" },
-  { value: "Spanish", labelEn: "Spanish", labelAr: "إسباني" },
-  { value: "Australian", labelEn: "Australian", labelAr: "أسترالي" },
-  { value: "Japanese", labelEn: "Japanese", labelAr: "ياباني" },
-  { value: "Chinese", labelEn: "Chinese", labelAr: "صيني" },
-  { value: "Indian", labelEn: "Indian", labelAr: "هندي" },
-  { value: "Brazilian", labelEn: "Brazilian", labelAr: "برازيلي" },
-  { value: "Mexican", labelEn: "Mexican", labelAr: "مكسيكي" },
+  { value: "Egyptian",     labelEn: "Egyptian",     labelAr: "مصري" },
+  { value: "American",     labelEn: "American",     labelAr: "أمريكي" },
+  { value: "British",      labelEn: "British",      labelAr: "بريطاني" },
+  { value: "Canadian",     labelEn: "Canadian",     labelAr: "كندي" },
+  { value: "French",       labelEn: "French",       labelAr: "فرنسي" },
+  { value: "German",       labelEn: "German",       labelAr: "ألماني" },
+  { value: "Italian",      labelEn: "Italian",      labelAr: "إيطالي" },
+  { value: "Spanish",      labelEn: "Spanish",      labelAr: "إسباني" },
+  { value: "Australian",   labelEn: "Australian",   labelAr: "أسترالي" },
+  { value: "Japanese",     labelEn: "Japanese",     labelAr: "ياباني" },
+  { value: "Chinese",      labelEn: "Chinese",      labelAr: "صيني" },
+  { value: "Indian",       labelEn: "Indian",       labelAr: "هندي" },
+  { value: "Brazilian",    labelEn: "Brazilian",    labelAr: "برازيلي" },
+  { value: "Mexican",      labelEn: "Mexican",      labelAr: "مكسيكي" },
   { value: "South Korean", labelEn: "South Korean", labelAr: "كوري جنوبي" },
-  { value: "Turkish", labelEn: "Turkish", labelAr: "تركي" },
-  { value: "Russian", labelEn: "Russian", labelAr: "روسي" },
-  { value: "Saudi Arabian", labelEn: "Saudi Arabian", labelAr: "سعودي" },
-  { value: "Emirati", labelEn: "Emirati", labelAr: "إماراتي" },
-  { value: "Other", labelEn: "Other", labelAr: "أخرى" },
+  { value: "Turkish",      labelEn: "Turkish",      labelAr: "تركي" },
+  { value: "Russian",      labelEn: "Russian",      labelAr: "روسي" },
+  { value: "Saudi Arabian",labelEn: "Saudi Arabian",labelAr: "سعودي" },
+  { value: "Emirati",      labelEn: "Emirati",      labelAr: "إماراتي" },
+  { value: "Other",        labelEn: "Other",        labelAr: "أخرى" },
 ];
 
 const LANGUAGES = [
-  { value: "Arabic", labelEn: "Arabic", labelAr: "العربية" },
-  { value: "English", labelEn: "English", labelAr: "الإنجليزية" },
-  { value: "French", labelEn: "French", labelAr: "الفرنسية" },
-  { value: "Spanish", labelEn: "Spanish", labelAr: "الإسبانية" },
-  { value: "German", labelEn: "German", labelAr: "الألمانية" },
-  { value: "Italian", labelEn: "Italian", labelAr: "الإيطالية" },
-  { value: "Russian", labelEn: "Russian", labelAr: "الروسية" },
-  { value: "Chinese", labelEn: "Chinese", labelAr: "الصينية" },
-  { value: "Japanese", labelEn: "Japanese", labelAr: "اليابانية" },
+  { value: "Arabic",     labelEn: "Arabic",     labelAr: "العربية" },
+  { value: "English",    labelEn: "English",    labelAr: "الإنجليزية" },
+  { value: "French",     labelEn: "French",     labelAr: "الفرنسية" },
+  { value: "Spanish",    labelEn: "Spanish",    labelAr: "الإسبانية" },
+  { value: "German",     labelEn: "German",     labelAr: "الألمانية" },
+  { value: "Italian",    labelEn: "Italian",    labelAr: "الإيطالية" },
+  { value: "Russian",    labelEn: "Russian",    labelAr: "الروسية" },
+  { value: "Chinese",    labelEn: "Chinese",    labelAr: "الصينية" },
+  { value: "Japanese",   labelEn: "Japanese",   labelAr: "اليابانية" },
   { value: "Portuguese", labelEn: "Portuguese", labelAr: "البرتغالية" },
 ];
 
 const GENDERS = [
-  { value: "Male", labelEn: "Male", labelAr: "ذكر" },
+  { value: "Male",   labelEn: "Male",   labelAr: "ذكر" },
   { value: "Female", labelEn: "Female", labelAr: "أنثى" },
 ];
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 12 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-  exit: { opacity: 0, y: -12, transition: { duration: 0.2 } },
+  hidden:  { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0,   transition: { duration: 0.3 } },
+  exit:    { opacity: 0, y: -12, transition: { duration: 0.2 } },
 };
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [userType, setUserType] = useState("tourist");
-  const [error, setError] = useState("");
-  const { signup } = useAuth();
-  const navigate = useNavigate();
+  const [showConfirm,  setShowConfirm]  = useState(false);
+  const [userType,     setUserType]     = useState("tourist");
+  const [error,        setError]        = useState("");
+  const { signup }   = useAuth();
+  const navigate     = useNavigate();
   const { language, t, isRTL } = useLanguage();
 
+  // ── Figma colors applied to field class helper ──
+  // border → #e0e0e0  |  focus border → #d4800b  |  error → #f87171
   const fieldClass = (hasError) =>
-    `w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm ${
+    `w-full px-4 py-3 rounded-xl outline-none transition-all text-sm ${
       hasError
         ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-        : "border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10"
+        : "focus:ring-2"
     }`;
 
+  const fieldStyle = (hasError) => ({
+    border: hasError ? "1.5px solid #f87171" : "1px solid #e0e0e0",
+    borderRadius: "14px",
+    fontSize: "14px",
+    color: "#333",
+    backgroundColor: "#fff",
+    // focus ring colour handled via inline onFocus/onBlur or Tailwind ring
+  });
+
   const inputPadding = isRTL ? "pr-11" : "pl-11";
+
   const signupSchema = useMemo(() => {
     const baseSchema = {
-      name: Yup.string().min(2, t("auth.nameMin2")).required(t("auth.nameRequired")),
-      email: Yup.string()
-        .email(t("auth.invalidEmail"))
-        .required(t("auth.emailRequired")),
-      phone: Yup.string()
-        .matches(/^[+]?[\d\s()-]{7,15}$/, t("auth.phoneInvalid"))
-        .required(t("auth.phoneRequired")),
-      gender: Yup.string().required(t("auth.genderRequired")),
-      age: Yup.number()
-        .typeError(t("auth.ageNumber"))
-        .min(16, t("auth.ageMin"))
-        .max(100, t("auth.ageMax"))
-        .required(t("auth.ageRequired")),
-      password: Yup.string()
-        .min(6, t("auth.passwordMin6"))
-        .required(t("auth.passwordRequired")),
-      confirmPassword: Yup.string()
-        .oneOf([Yup.ref("password")], t("auth.passwordsMatch"))
-        .required(t("auth.confirmRequired")),
+      firstName:       Yup.string().min(2, t("auth.nameMin2")).required(t("auth.firstNameRequired")),
+      lastName:        Yup.string().min(2, t("auth.nameMin2")).required(t("auth.lastNameRequired")),
+      email:           Yup.string().email(t("auth.invalidEmail")).required(t("auth.emailRequired")),
+      phone:           Yup.string().matches(/^[+]?[\d\s()-]{7,15}$/, t("auth.phoneInvalid")).required(t("auth.phoneRequired")),
+      gender:          Yup.string().required(t("auth.genderRequired")),
+      dateOfBirth:     Yup.date().required(t("auth.dobRequired")),
+      password:        Yup.string().min(6, t("auth.passwordMin6")).required(t("auth.passwordRequired")),
+      confirmPassword: Yup.string().oneOf([Yup.ref("password")], t("auth.passwordsMatch")).required(t("auth.confirmRequired")),
     };
 
-    return userType === "tourist"
-      ? Yup.object().shape({
-          ...baseSchema,
-          nationality: Yup.string().required(t("auth.nationalityRequired")),
-        })
-      : Yup.object().shape({
-          ...baseSchema,
-          languages: Yup.array()
-            .min(1, t("auth.selectAtLeastOneLanguage"))
-            .required(t("auth.languagesRequired")),
-        });
+    if (userType === "tourist") {
+      return Yup.object().shape({ ...baseSchema, nationality: Yup.string().required(t("auth.nationalityRequired")) });
+    } else {
+      return Yup.object().shape({
+        ...baseSchema,
+        nationality: Yup.string().required(t("auth.nationalityRequired")),
+        languages: Yup.array().min(1, t("auth.selectAtLeastOneLanguage")).required(t("auth.languagesRequired")),
+        licenseId: Yup.string().required(t("auth.licenseIdRequired")),
+        licenseImage: Yup.mixed().required(t("auth.licenseImageRequired")),
+      });
+    }
   }, [t, userType]);
 
   const initialValues = {
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     phone: "",
     gender: "",
-    age: "",
+    dateOfBirth: "",
     password: "",
     confirmPassword: "",
     nationality: "",
     languages: [],
+    licenseId: "",
+    licenseImage: null,
   };
 
   const handleSubmit = (values, { setSubmitting }) => {
@@ -134,447 +148,454 @@ export default function SignUp() {
     const extra = {
       phone: values.phone,
       gender: values.gender,
-      age: Number(values.age),
+      dateOfBirth: values.dateOfBirth,
+      nationality: values.nationality,
     };
-
-    if (userType === "tourist") {
-      extra.nationality = values.nationality;
-    } else {
+    if (userType === "guide") {
       extra.languages = values.languages;
+      extra.licenseId = values.licenseId;
+      extra.licenseImage = values.licenseImage;
     }
 
-    const result = signup(
-      values.name,
-      values.email,
-      values.password,
-      userType,
-      extra
-    );
-
+    const result = signup(values.firstName + " " + values.lastName, values.email, values.password, userType, extra);
     if (result.success) {
       navigate("/");
     } else {
-      setError(
-        result.error === "Email already exists"
-          ? t("auth.emailExists")
-          : result.error
-      );
+      setError(result.error === "Email already exists" ? t("auth.emailExists") : result.error);
     }
     setSubmitting(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 py-12">
+    /* ── Full-page background image (same as Login) ── */
+    <div
+      className={`min-h-screen flex items-center justify-center p-6 relative ${isRTL ? "text-right" : "text-left"}`}
+      style={{
+        backgroundImage: `url(${imgBackground})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {/* Back button */}
+      <Link
+        to="/"
+        className="absolute top-8 left-8 z-20 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
+        aria-label={t("common.close")}
+      >
+        <img src={imgBackIcon} alt="back" className="w-full h-full" />
+      </Link>
+
+      {/* ── Large beige rounded card (same as Login) ── */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8"
+        className={`relative w-full max-w-5xl rounded-[50px] overflow-hidden shadow-[0px_4px_4px_3px_rgba(0,0,0,0.25)] ${isRTL ? "text-right" : "text-left"}`}
+        style={{ backgroundColor: "#f2e0ca" }}
       >
-        <h1 className="text-center text-2xl font-bold text-secondary mb-2">
-          {t("auth.createAccountTitle")}
-        </h1>
-        <p className="text-center text-muted text-sm mb-6">
-          {t("auth.createAccountSubtitle")}
-        </p>
-
-        <div dir="ltr" className="relative flex gap-1 mb-6 bg-gray-100 rounded-xl p-1">
-          <motion.div
-            layout
-            className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-secondary rounded-lg shadow-sm"
-            style={{ left: userType === "tourist" ? 4 : "calc(50% + 0px)" }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          />
-          <button
-            type="button"
-            onClick={() => setUserType("tourist")}
-            className={`relative z-10 flex-1 py-2.5 rounded-lg font-semibold text-sm transition-colors ${
-              userType === "tourist" ? "text-white" : "text-secondary"
-            }`}
+        {/* Card heading */}
+        <div className="flex flex-col items-center pt-8 pb-0 px-8">
+          <h1
+            className="font-extrabold text-3xl"
+            style={{ color: "#d4800b", fontFamily: "Inter, sans-serif" }}
           >
-            {t("auth.tourist")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setUserType("guide")}
-            className={`relative z-10 flex-1 py-2.5 rounded-lg font-semibold text-sm transition-colors ${
-              userType === "guide" ? "text-white" : "text-secondary"
-            }`}
-          >
-            {t("auth.guide")}
-          </button>
+            {t("auth.createAccountTitle")}
+          </h1>
+          <p className="text-lg font-medium mt-1" style={{ color: "#837e77" }}>
+            {t("auth.createAccountSubtitle")}
+          </p>
         </div>
 
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm"
-          >
-            {error}
-          </motion.div>
-        )}
+        {/* Two-column row */}
+        <div className={`flex gap-8 px-16 pb-12 pt-6 items-center justify-center ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
 
-        <Formik
-          initialValues={initialValues}
-          validationSchema={signupSchema}
-          onSubmit={handleSubmit}
-        >
-          {({ errors, touched, isSubmitting, values, setFieldValue }) => (
-            <Form className="space-y-4">
-              <div>
-                <div className={`relative ${isRTL ? "text-right" : ""}`}>
-                  <User
-                    size={18}
-                    className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
-                      isRTL ? "right-3.5" : "left-3.5"
-                    }`}
-                  />
-                  <Field
-                    name="name"
-                    type="text"
-                    placeholder={t("auth.namePlaceholder")}
-                    className={`${fieldClass(errors.name && touched.name)} ${inputPadding}`}
-                  />
-                </div>
-                {errors.name && touched.name && (
-                  <p className="mt-1 text-xs text-red-500">{errors.name}</p>
-                )}
+          {/* ── White form card ── */}
+          <div className="flex-shrink-0 w-full max-w-md">
+            <div
+              className="bg-white overflow-hidden p-8"
+              style={{ borderRadius: "20px", boxShadow: "2px 4px 4px 0px rgba(0,0,0,0.25)" }}
+            >
+              {/* Form title */}
+              <h2
+                className="text-center font-extrabold mb-2"
+                style={{ color: "#d4800b", fontSize: "25px", fontFamily: "Inter, sans-serif" }}
+              >
+                {t("auth.createAccountTitle")}
+              </h2>
+              <p className="text-center text-sm mb-4" style={{ color: "#aea9a9" }}>
+                {t("auth.createAccountSubtitle")}
+              </p>
+
+              {/* Tourist / Guide toggle — original structure preserved */}
+              <div dir="ltr" className="relative flex gap-1 mb-5 rounded-xl p-1" style={{ backgroundColor: "#f7f7f9" }}>
+                <motion.div
+                  layout
+                  className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg shadow-sm"
+                  style={{
+                    left: userType === "tourist" ? 4 : "calc(50% + 0px)",
+                    backgroundColor: "#d4800b",
+                  }}
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setUserType("tourist")}
+                  className="relative z-10 flex-1 py-2.5 rounded-lg font-semibold text-sm transition-colors"
+                  style={{ color: userType === "tourist" ? "#fff" : "#d4800b" }}
+                >
+                  {t("auth.tourist")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUserType("guide")}
+                  className="relative z-10 flex-1 py-2.5 rounded-lg font-semibold text-sm transition-colors"
+                  style={{ color: userType === "guide" ? "#fff" : "#d4800b" }}
+                >
+                  {t("auth.guide")}
+                </button>
               </div>
 
-              <div>
-                <div className="relative">
-                  <Mail
-                    size={18}
-                    className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
-                      isRTL ? "right-3.5" : "left-3.5"
-                    }`}
-                  />
-                  <Field
-                    name="email"
-                    type="email"
-                    placeholder={t("auth.emailAddress")}
-                    className={`${fieldClass(errors.email && touched.email)} ${inputPadding}`}
-                  />
-                </div>
-                {errors.email && touched.email && (
-                  <p className="mt-1 text-xs text-red-500">{errors.email}</p>
-                )}
-              </div>
+              {/* Error */}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm"
+                >
+                  {error}
+                </motion.div>
+              )}
 
-              <div>
-                <div className="relative">
-                  <Phone
-                    size={18}
-                    className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
-                      isRTL ? "right-3.5" : "left-3.5"
-                    }`}
-                  />
-                  <Field
-                    name="phone"
-                    type="tel"
-                    placeholder={t("auth.phonePlaceholder")}
-                    className={`${fieldClass(errors.phone && touched.phone)} ${inputPadding} ${isRTL ? "text-right" : ""}`}
-                  />
-                </div>
-                {errors.phone && touched.phone && (
-                  <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
-                )}
-              </div>
+              <Formik initialValues={initialValues} validationSchema={signupSchema} onSubmit={handleSubmit}>
+                {({ errors, touched, isSubmitting, values, setFieldValue }) => (
+                  <Form className="space-y-3">
 
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <div className="relative">
-                    <User
-                      size={18}
-                      className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
-                        isRTL ? "right-3.5" : "left-3.5"
-                      }`}
-                    />
-                    <Field
-                      as="select"
-                      name="gender"
-                      className={`${fieldClass(
-                        errors.gender && touched.gender
-                      )} appearance-none cursor-pointer ${!values.gender ? "text-muted" : ""} ${inputPadding}`}
-                    >
-                      <option value="" disabled>
-                        {t("auth.selectGender")}
-                      </option>
-                      {GENDERS.map((g) => (
-                        <option key={g.value} value={g.value}>
-                          {language === "ar" ? g.labelAr : g.labelEn}
-                        </option>
-                      ))}
-                    </Field>
-                  </div>
-                  {errors.gender && touched.gender && (
-                    <p className="mt-1 text-xs text-red-500">{errors.gender}</p>
-                  )}
-                </div>
-
-                <div className="w-28">
-                  <div className="relative">
-                    <Calendar
-                      size={18}
-                      className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
-                        isRTL ? "right-3.5" : "left-3.5"
-                      }`}
-                    />
-                    <Field
-                      name="age"
-                      type="number"
-                      placeholder={t("auth.agePlaceholder")}
-                      min="16"
-                      max="100"
-                      className={`${fieldClass(errors.age && touched.age)} ${inputPadding}`}
-                    />
-                  </div>
-                  {errors.age && touched.age && (
-                    <p className="mt-1 text-xs text-red-500">{errors.age}</p>
-                  )}
-                </div>
-              </div>
-
-              <AnimatePresence mode="wait">
-                {userType === "tourist" ? (
-                  <motion.div
-                    key="nationality"
-                    variants={fadeUp}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                  >
-                    <div className="relative">
-                      <Globe
-                        size={18}
-                        className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
-                          isRTL ? "right-3.5" : "left-3.5"
-                        }`}
-                      />
-                      <Field
-                        as="select"
-                        name="nationality"
-                        className={`${fieldClass(
-                          errors.nationality && touched.nationality
-                        )} appearance-none cursor-pointer ${!values.nationality ? "text-muted" : ""} ${inputPadding}`}
-                      >
-                        <option value="" disabled>
-                          {t("auth.selectNationality")}
-                        </option>
-                        {NATIONALITIES.map((n) => (
-                          <option key={n.value} value={n.value}>
-                            {language === "ar" ? n.labelAr : n.labelEn}
-                          </option>
-                        ))}
-                      </Field>
-                    </div>
-                    {errors.nationality && touched.nationality && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {errors.nationality}
-                      </p>
-                    )}
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="languages"
-                    variants={fadeUp}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                  >
-                    <div className="relative">
-                      <Languages
-                        size={18}
-                        className={`absolute top-3 text-muted pointer-events-none ${
-                          isRTL ? "right-3.5" : "left-3.5"
-                        }`}
-                      />
-                      <div
-                        className={`w-full px-4 py-3 border rounded-xl transition-all min-h-[48px] ${
-                          errors.languages && touched.languages
-                            ? "border-red-400"
-                            : "border-gray-200"
-                        } ${inputPadding}`}
-                      >
-                        {values.languages.length === 0 && (
-                          <span className="text-sm text-muted">
-                            {t("auth.selectLanguages")}
-                          </span>
-                        )}
-                        <div className="flex flex-wrap gap-2">
-                          {LANGUAGES.map((lang) => {
-                            const selected = values.languages.includes(lang.value);
-                            return (
-                              <button
-                                key={lang.value}
-                                type="button"
-                                onClick={() => {
-                                  const next = selected
-                                    ? values.languages.filter((l) => l !== lang.value)
-                                    : [...values.languages, lang.value];
-                                  setFieldValue("languages", next);
-                                }}
-                                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                                  selected
-                                    ? "bg-primary text-white shadow-sm"
-                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                }`}
-                              >
-                                {language === "ar" ? lang.labelAr : lang.labelEn}
-                              </button>
-                            );
-                          })}
+                    {/* First & Last Name */}
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <div className="relative">
+                          <User size={16} className={`absolute top-1/2 -translate-y-1/2 pointer-events-none ${isRTL ? "right-3.5" : "left-3.5"}`} style={{ color: "#aea9a9" }} />
+                          <Field
+                            name="firstName" type="text"
+                            placeholder={t("auth.firstNamePlaceholder")}
+                            className={`${fieldClass(errors.firstName && touched.firstName)} ${inputPadding}`}
+                            style={fieldStyle(errors.firstName && touched.firstName)}
+                          />
                         </div>
+                        {errors.firstName && touched.firstName && <p className="mt-1 text-xs text-red-500">{errors.firstName}</p>}
+                      </div>
+                      <div className="flex-1">
+                        <div className="relative">
+                          <User size={16} className={`absolute top-1/2 -translate-y-1/2 pointer-events-none ${isRTL ? "right-3.5" : "left-3.5"}`} style={{ color: "#aea9a9" }} />
+                          <Field
+                            name="lastName" type="text"
+                            placeholder={t("auth.lastNamePlaceholder")}
+                            className={`${fieldClass(errors.lastName && touched.lastName)} ${inputPadding}`}
+                            style={fieldStyle(errors.lastName && touched.lastName)}
+                          />
+                        </div>
+                        {errors.lastName && touched.lastName && <p className="mt-1 text-xs text-red-500">{errors.lastName}</p>}
                       </div>
                     </div>
-                    {errors.languages && touched.languages && (
-                      <p className="mt-1 text-xs text-red-500">
-                        {errors.languages}
-                      </p>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
-              <div>
-                <div className="relative">
-                  <Lock
-                    size={18}
-                    className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
-                      isRTL ? "right-3.5" : "left-3.5"
-                    }`}
-                  />
-                  <Field
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    dir="ltr"
-                    placeholder={t("auth.password")}
-                    className={`${fieldClass(errors.password && touched.password)} !pl-11 !pr-12 text-${isRTL ? "right" : "left"}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className={`absolute top-1/2 -translate-y-1/2 text-muted hover:text-secondary transition-colors ${
-                      isRTL ? "left-3" : "right-3"
-                    }`}
-                    aria-label={
-                      showPassword ? t("auth.hidePassword") : t("auth.showPassword")
-                    }
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {/* Email */}
+                    <div>
+                      <div className="relative">
+                        <Mail size={16} className={`absolute top-1/2 -translate-y-1/2 pointer-events-none ${isRTL ? "right-3.5" : "left-3.5"}`} style={{ color: "#aea9a9" }} />
+                        <Field
+                          name="email" type="email"
+                          placeholder={t("auth.emailAddress")}
+                          className={`${fieldClass(errors.email && touched.email)} ${inputPadding}`}
+                          style={fieldStyle(errors.email && touched.email)}
+                        />
+                      </div>
+                      {errors.email && touched.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                    </div>
+
+                    {/* Phone */}
+                    <div>
+                      <div className="relative">
+                        <Phone size={16} className={`absolute top-1/2 -translate-y-1/2 pointer-events-none ${isRTL ? "right-3.5" : "left-3.5"}`} style={{ color: "#aea9a9" }} />
+                        <Field
+                          name="phone" type="tel"
+                          placeholder={t("auth.phonePlaceholder")}
+                          className={`${fieldClass(errors.phone && touched.phone)} ${inputPadding} ${isRTL ? "text-right" : ""}`}
+                          style={fieldStyle(errors.phone && touched.phone)}
+                        />
+                      </div>
+                      {errors.phone && touched.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
+                    </div>
+
+                    {/* Gender + DOB row */}
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <div className="relative">
+                          <User size={16} className={`absolute top-1/2 -translate-y-1/2 pointer-events-none ${isRTL ? "right-3.5" : "left-3.5"}`} style={{ color: "#aea9a9" }} />
+                          <Field
+                            as="select" name="gender"
+                            className={`${fieldClass(errors.gender && touched.gender)} appearance-none cursor-pointer ${inputPadding}`}
+                            style={{ ...fieldStyle(errors.gender && touched.gender), color: !values.gender ? "#aea9a9" : "#333" }}
+                          >
+                            <option value="" disabled>{t("auth.selectGender")}</option>
+                            {GENDERS.map(g => <option key={g.value} value={g.value}>{language === "ar" ? g.labelAr : g.labelEn}</option>)}
+                          </Field>
+                        </div>
+                        {errors.gender && touched.gender && <p className="mt-1 text-xs text-red-500">{errors.gender}</p>}
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="relative">
+                          <Calendar size={16} className={`absolute top-1/2 -translate-y-1/2 pointer-events-none ${isRTL ? "right-3.5" : "left-3.5"}`} style={{ color: "#aea9a9" }} />
+                          <Field
+                            name="dateOfBirth" type="date"
+                            placeholder={t("auth.dobPlaceholder")}
+                            className={`${fieldClass(errors.dateOfBirth && touched.dateOfBirth)} ${inputPadding}`}
+                            style={{ ...fieldStyle(errors.dateOfBirth && touched.dateOfBirth), color: !values.dateOfBirth ? "#aea9a9" : "#333" }}
+                          />
+                        </div>
+                        {errors.dateOfBirth && touched.dateOfBirth && <p className="mt-1 text-xs text-red-500">{errors.dateOfBirth}</p>}
+                      </div>
+                    </div>
+
+                    {/* Nationality (tourist) / Languages (guide) */}
+                    <AnimatePresence mode="wait">
+                      {userType === "tourist" ? (
+                        <motion.div key="nationality" variants={fadeUp} initial="hidden" animate="visible" exit="exit">
+                          <div className="relative">
+                            <Globe size={16} className={`absolute top-1/2 -translate-y-1/2 pointer-events-none ${isRTL ? "right-3.5" : "left-3.5"}`} style={{ color: "#aea9a9" }} />
+                            <Field
+                              as="select" name="nationality"
+                              className={`${fieldClass(errors.nationality && touched.nationality)} appearance-none cursor-pointer ${inputPadding}`}
+                              style={{ ...fieldStyle(errors.nationality && touched.nationality), color: !values.nationality ? "#aea9a9" : "#333" }}
+                            >
+                              <option value="" disabled>{t("auth.selectNationality")}</option>
+                              {NATIONALITIES.map(n => <option key={n.value} value={n.value}>{language === "ar" ? n.labelAr : n.labelEn}</option>)}
+                            </Field>
+                          </div>
+                          {errors.nationality && touched.nationality && <p className="mt-1 text-xs text-red-500">{errors.nationality}</p>}
+                        </motion.div>
+                      ) : (
+                        <motion.div key="guide-fields" variants={fadeUp} initial="hidden" animate="visible" exit="exit" className="space-y-3">
+                          {/* Nationality */}
+                          <div className="relative">
+                            <Globe size={16} className={`absolute top-1/2 -translate-y-1/2 pointer-events-none ${isRTL ? "right-3.5" : "left-3.5"}`} style={{ color: "#aea9a9" }} />
+                            <Field
+                              as="select" name="nationality"
+                              className={`${fieldClass(errors.nationality && touched.nationality)} appearance-none cursor-pointer ${inputPadding}`}
+                              style={{ ...fieldStyle(errors.nationality && touched.nationality), color: !values.nationality ? "#aea9a9" : "#333" }}
+                            >
+                              <option value="" disabled>{t("auth.selectNationality")}</option>
+                              {NATIONALITIES.map(n => <option key={n.value} value={n.value}>{language === "ar" ? n.labelAr : n.labelEn}</option>)}
+                            </Field>
+                          </div>
+                          {errors.nationality && touched.nationality && <p className="mt-1 text-xs text-red-500">{errors.nationality}</p>}
+
+                          {/* Languages */}
+                          <div className="relative">
+                            <Languages size={16} className={`absolute top-3 pointer-events-none ${isRTL ? "right-3.5" : "left-3.5"}`} style={{ color: "#aea9a9" }} />
+                            <div
+                              className={`w-full px-4 py-3 min-h-[48px] ${inputPadding}`}
+                              style={{
+                                border: errors.languages && touched.languages ? "1.5px solid #f87171" : "1px solid #e0e0e0",
+                                borderRadius: "14px",
+                              }}
+                            >
+                              {values.languages.length === 0 && (
+                                <span className="text-sm" style={{ color: "#aea9a9" }}>{t("auth.selectLanguages")}</span>
+                              )}
+                              <div className="flex flex-wrap gap-2">
+                                {LANGUAGES.map(lang => {
+                                  const selected = values.languages.includes(lang.value);
+                                  return (
+                                    <button
+                                      key={lang.value} type="button"
+                                      onClick={() => {
+                                        const next = selected
+                                          ? values.languages.filter(l => l !== lang.value)
+                                          : [...values.languages, lang.value];
+                                        setFieldValue("languages", next);
+                                      }}
+                                      className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+                                      style={{
+                                        backgroundColor: selected ? "#d4800b" : "#f7f7f9",
+                                        color: selected ? "#fff" : "#555",
+                                      }}
+                                    >
+                                      {language === "ar" ? lang.labelAr : lang.labelEn}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                          {errors.languages && touched.languages && <p className="mt-1 text-xs text-red-500">{errors.languages}</p>}
+
+                          {/* License ID */}
+                          <div className="relative">
+                            <Field
+                              name="licenseId" type="text"
+                              placeholder={t("auth.licenseIdPlaceholder")}
+                              className={fieldClass(errors.licenseId && touched.licenseId)}
+                              style={fieldStyle(errors.licenseId && touched.licenseId)}
+                            />
+                          </div>
+                          {errors.licenseId && touched.licenseId && <p className="mt-1 text-xs text-red-500">{errors.licenseId}</p>}
+
+                          {/* License Image */}
+                          <div className="relative">
+                            <input
+                              id="licenseImage"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => setFieldValue("licenseImage", e.currentTarget.files[0])}
+                            />
+                            <label
+                              htmlFor="licenseImage"
+                              className={`flex items-center justify-center w-full px-4 py-3 cursor-pointer rounded-xl transition-all text-sm border ${
+                                errors.licenseImage && touched.licenseImage
+                                  ? "border-red-400 text-red-500"
+                                  : "border-gray-300 text-gray-500 hover:border-orange-500"
+                              }`}
+                            >
+                              {values.licenseImage ? values.licenseImage.name : t("auth.uploadLicenseImage")}
+                            </label>
+                          </div>
+                          {errors.licenseImage && touched.licenseImage && <p className="mt-1 text-xs text-red-500">{errors.licenseImage}</p>}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Password */}
+                    <div>
+                      <div className="relative">
+                        <Lock size={16} className={`absolute top-1/2 -translate-y-1/2 pointer-events-none ${isRTL ? "right-3.5" : "left-3.5"}`} style={{ color: "#aea9a9" }} />
+                        <Field
+                          name="password" type={showPassword ? "text" : "password"} dir="ltr"
+                          placeholder={t("auth.password")}
+                          className={`${fieldClass(errors.password && touched.password)} !pl-11 !pr-12`}
+                          style={fieldStyle(errors.password && touched.password)}
+                        />
+                        <button
+                          type="button" onClick={() => setShowPassword(!showPassword)}
+                          className={`absolute top-1/2 -translate-y-1/2 transition-colors ${isRTL ? "left-3" : "right-3"}`}
+                          style={{ color: "#aea9a9" }}
+                          onMouseEnter={e => e.currentTarget.style.color = "#d4800b"}
+                          onMouseLeave={e => e.currentTarget.style.color = "#aea9a9"}
+                          aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      {errors.password && touched.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+                    </div>
+
+                    {/* Confirm password */}
+                    <div>
+                      <div className="relative">
+                        <Lock size={16} className={`absolute top-1/2 -translate-y-1/2 pointer-events-none ${isRTL ? "right-3.5" : "left-3.5"}`} style={{ color: "#aea9a9" }} />
+                        <Field
+                          name="confirmPassword" type={showConfirm ? "text" : "password"} dir="ltr"
+                          placeholder={t("auth.confirmPassword")}
+                          className={`${fieldClass(errors.confirmPassword && touched.confirmPassword)} !pl-11 !pr-12`}
+                          style={fieldStyle(errors.confirmPassword && touched.confirmPassword)}
+                        />
+                        <button
+                          type="button" onClick={() => setShowConfirm(!showConfirm)}
+                          className={`absolute top-1/2 -translate-y-1/2 transition-colors ${isRTL ? "left-3" : "right-3"}`}
+                          style={{ color: "#aea9a9" }}
+                          onMouseEnter={e => e.currentTarget.style.color = "#d4800b"}
+                          onMouseLeave={e => e.currentTarget.style.color = "#aea9a9"}
+                          aria-label={showConfirm ? t("auth.hidePassword") : t("auth.showPassword")}
+                        >
+                          {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      {errors.confirmPassword && touched.confirmPassword && <p className="mt-1 text-xs text-red-500">{errors.confirmPassword}</p>}
+                    </div>
+
+                    {/* Submit button — Figma: #d4800b, rounded-[14px], shadow */}
+                    <button
+                      type="submit" disabled={isSubmitting}
+                      className="w-full py-3 text-white font-semibold transition-colors disabled:opacity-50 mt-2"
+                      style={{
+                        backgroundColor: "#d4800b",
+                        borderRadius: "14px",
+                        boxShadow: "0px 4px 4px 0px rgba(0,0,0,0.25)",
+                        fontSize: "16px",
+                      }}
+                      onMouseEnter={e => !isSubmitting && (e.currentTarget.style.backgroundColor = "#bc710a")}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#d4800b")}
+                    >
+                      {isSubmitting ? t("auth.createLoading") : t("auth.createButton")}
+                    </button>
+                  </Form>
+                )}
+              </Formik>
+
+              {/* Already have account — Figma: #707b81 / #d4800b */}
+              <p className="mt-5 text-center text-sm" style={{ color: "#707b81" }}>
+                {t("auth.alreadyHaveAccount")}{" "}
+                <Link to="/login" className="font-medium hover:underline" style={{ color: "#d4800b" }}>
+                  {t("auth.signIn")}
+                </Link>
+              </p>
+
+              {/* Or + socials */}
+              <div className="mt-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex-1 h-px" style={{ backgroundColor: "#e0e0e0" }} />
+                  <span className="text-sm font-semibold" style={{ color: "#80888a" }}>{t("auth.orConnectWith")}</span>
+                  <div className="flex-1 h-px" style={{ backgroundColor: "#e0e0e0" }} />
+                </div>
+                <div className="flex justify-center gap-4">
+                  <button type="button" className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-gray-50 transition-colors" style={{ border: "1px solid #e5e7eb" }} aria-label={t("auth.facebook")}>
+                    <img src={imgFacebook} alt="Facebook" className="w-6 h-6 object-contain" />
+                  </button>
+                  <button type="button" className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-gray-50 transition-colors" style={{ border: "1px solid #e5e7eb" }} aria-label={t("auth.google")}>
+                    <img src={imgDeviconGoogle} alt="Google" className="w-6 h-6 object-contain" />
+                  </button>
+                  <button type="button" className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-gray-50 transition-colors" style={{ border: "1px solid #e5e7eb" }} aria-label={t("auth.instagram")}>
+                    <img src={imgInstagram} alt="Instagram" className="w-6 h-6 object-contain" />
                   </button>
                 </div>
-                {errors.password && touched.password && (
-                  <p className="mt-1 text-xs text-red-500">{errors.password}</p>
-                )}
               </div>
+            </div>
+          </div>
 
-              <div>
-                <div className="relative">
-                  <Lock
-                    size={18}
-                    className={`absolute top-1/2 -translate-y-1/2 text-muted pointer-events-none ${
-                      isRTL ? "right-3.5" : "left-3.5"
-                    }`}
+          {/*
+           * ── Right side: smartphone + traveller ──
+           * Exact same Figma transforms as Login.
+           * hidden on mobile, visible lg+
+           */}
+          <div className="hidden lg:flex flex-1 relative items-end justify-center" style={{ minHeight: "520px" }}>
+
+            {/* Smartphone — rotate(-16.15deg) skewX(0.14deg), opacity 0.6, image 120% oversized */}
+            <div className="absolute inset-0 flex items-center justify-center" style={{ top: "-20px" }}>
+              <div style={{ transform: "rotate(-16.15deg) skewX(0.14deg)", width: "100%", height: "100%", position: "relative" }}>
+                <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+                  <img
+                    alt="" src={imgSmartphone}
+                    style={{
+                      position: "absolute",
+                      left: "-12.05%", top: "-10%",
+                      width: "120%", height: "120%",
+                      maxWidth: "none",
+                      opacity: 0.6,
+                      objectFit: "cover",
+                    }}
                   />
-                  <Field
-                    name="confirmPassword"
-                    type={showConfirm ? "text" : "password"}
-                    dir="ltr"
-                    placeholder={t("auth.confirmPassword")}
-                    className={`${fieldClass(
-                      errors.confirmPassword && touched.confirmPassword
-                    )} !pl-11 !pr-12 text-${isRTL ? "right" : "left"}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm(!showConfirm)}
-                    className={`absolute top-1/2 -translate-y-1/2 text-muted hover:text-secondary transition-colors ${
-                      isRTL ? "left-3" : "right-3"
-                    }`}
-                    aria-label={
-                      showConfirm ? t("auth.hidePassword") : t("auth.showPassword")
-                    }
-                  >
-                    {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
                 </div>
-                {errors.confirmPassword && touched.confirmPassword && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.confirmPassword}
-                  </p>
-                )}
               </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-3.5 bg-secondary text-white font-semibold rounded-xl hover:bg-secondary/90 transition-colors disabled:opacity-50 mt-4 shadow-sm"
-              >
-                {isSubmitting ? t("auth.createLoading") : t("auth.createButton")}
-              </button>
-            </Form>
-          )}
-        </Formik>
-
-        <p className="mt-6 text-center text-sm text-muted">
-          {t("auth.alreadyHaveAccount")}{" "}
-          <Link to="/login" className="text-primary font-medium hover:underline">
-            {t("auth.signIn")}
-          </Link>
-        </p>
-
-        <div className="mt-6">
-          <div className="relative mb-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-3 bg-white text-muted">{t("auth.orConnectWith")}</span>
-            </div>
+
+            {/* Traveller on top */}
+            <img
+              src={imgTraveller} alt="Traveller"
+              className="relative z-10"
+              style={{ width: "343px", height: "391px", objectFit: "cover", flexShrink: 0 }}
+            />
           </div>
-          <div className="flex justify-center gap-4">
-            <button
-              type="button"
-              className="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 hover:shadow-sm transition-all"
-              aria-label={`${t("auth.signUp")} ${t("auth.facebook")}`}
-            >
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#1877F2">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 hover:shadow-sm transition-all"
-              aria-label={`${t("auth.signUp")} ${t("auth.google")}`}
-            >
-              <svg className="w-6 h-6" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 hover:shadow-sm transition-all"
-              aria-label={`${t("auth.signUp")} ${t("auth.instagram")}`}
-            >
-              <svg className="w-6 h-6" viewBox="0 0 24 24">
-                <defs>
-                  <linearGradient id="ig-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#FFDC80" />
-                    <stop offset="50%" stopColor="#F56040" />
-                    <stop offset="100%" stopColor="#C13584" />
-                  </linearGradient>
-                </defs>
-                <path
-                  fill="url(#ig-gradient)"
-                  d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"
-                />
-              </svg>
-            </button>
-          </div>
+
         </div>
       </motion.div>
     </div>

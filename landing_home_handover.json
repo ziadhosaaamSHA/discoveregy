@@ -76,6 +76,7 @@
   },
 
   "layout": {
+
     "grid": {
       "desktop": "12-column grid",
       "tablet": "8-column grid",

@@ -1,29 +1,37 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Phone, MapPin, Bookmark, Star, BadgeCheck, ArrowRight } from "lucide-react";
+import {
+  Phone, MapPin, Bookmark, Star, BadgeCheck,
+  ArrowLeft, ArrowRight, ChevronLeft, ChevronRight,
+} from "lucide-react";
 import { DESTINATIONS, COMMENTS } from "../data/destinations";
 import { useBookmarks } from "../context/BookmarksContext";
 import { useLanguage } from "../context/LanguageContext";
 import BookingModal from "../components/BookingModal";
 
+// Figma back icon
+const imgBackIcon = "http://localhost:3845/assets/6235413aa7ab9a66ee4722fb5888215567271838.svg";
+
 export default function DestinationDetail() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const { id }       = useParams();
+  const navigate     = useNavigate();
   const { isBookmarked, toggleBookmark } = useBookmarks();
-  const { t, language, isRTL } = useLanguage();
+  const { t, language, isRTL }           = useLanguage();
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const carouselRef  = useRef(null);
+
   const destination = DESTINATIONS.find((d) => d.id === Number(id));
-  const bookmarked = destination ? isBookmarked(destination.id) : false;
+  const bookmarked  = destination ? isBookmarked(destination.id) : false;
 
   if (!destination) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <p className="text-2xl font-bold text-secondary mb-2">
+          <p className="text-2xl font-bold mb-2" style={{ color: "#2B2D42" }}>
             {t("destination.notFound")}
           </p>
-          <Link to="/" className="text-primary hover:underline">
+          <Link to="/" style={{ color: "#d4800b" }} className="hover:underline">
             {t("destination.goBackHome")}
           </Link>
         </div>
@@ -31,172 +39,251 @@ export default function DestinationDetail() {
     );
   }
 
-  const data = destination.copy[language] || destination.copy.en;
-  const name = data.name;
+  const data        = destination.copy[language] || destination.copy.en;
+  const name        = data.name;
   const description = data.description;
 
+  // Build carousel images from the destination image + variations
+  const carouselImages = Array.from({ length: 9 }, (_, i) => ({
+    id: i,
+    src: destination.image.replace("w=400&h=400", `w=200&h=260&sig=${i}`),
+    alt: `${name} photo ${i + 1}`,
+  }));
+
+  const scrollCarousel = (dir) => {
+    if (!carouselRef.current) return;
+    carouselRef.current.scrollBy({ left: dir * 260, behavior: "smooth" });
+  };
+
+  // Handle drag-to-scroll
+  const [isDown, setIsDown] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleMouseDown = (e) => {
+    setIsDown(true);
+    setStartX(e.pageX - carouselRef.current.offsetLeft);
+    setScrollLeft(carouselRef.current.scrollLeft);
+  };
+  const handleMouseLeave = () => setIsDown(false);
+  const handleMouseUp = () => setIsDown(false);
+  const handleMouseMove = (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - carouselRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+    carouselRef.current.scrollLeft = scrollLeft - walk;
+  };
+
   return (
-    <div className={`min-h-screen bg-gray-50 ${isRTL ? 'text-right' : 'text-left'}`}>
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-100">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div className={`min-h-screen ${isRTL ? "text-right" : "text-left"}`} style={{ backgroundColor: "#F2E0CA" }}>
+
+      {/* ── Sticky header ── */}
+      <header
+        className="sticky top-0 z-40 border-b"
+        style={{ backgroundColor: "#fff", borderColor: "#e5e7eb" }}
+      >
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-full transition-colors hover:bg-gray-100"
             aria-label={t("common.close")}
           >
-            {isRTL ? <ArrowRight size={20} className="text-secondary" /> : <ArrowLeft size={20} className="text-secondary" />}
+            <img src={imgBackIcon} alt="back" className="w-6 h-6" />
           </button>
-          <h1 className="text-lg font-semibold text-secondary">{t("destination.details")}</h1>
+          <h1 className="text-lg font-semibold" style={{ color: "#2B2D42" }}>
+            {t("destination.details")}
+          </h1>
           <div className="w-10" />
         </div>
       </header>
 
-      {/* Content */}
-      <main className="max-w-4xl mx-auto bg-white min-h-screen shadow-lg">
-        {/* Hero Image */}
+      <main className="max-w-6xl mx-auto min-h-screen">
+
+        {/* ── Hero image ── */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="relative aspect-video w-full"
+          className="relative w-full overflow-hidden mb-8"
+          style={{ height: "420px", borderRadius: "0 0 24px 24px" }}
         >
           <img
-            src={destination.image.replace("w=400&h=400", "w=800&h=600")}
+            src={destination.image.replace("w=400&h=400", "w=1200&h=600")}
             alt={name}
             className="w-full h-full object-cover"
             loading="eager"
           />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.35) 100%)" }} />
+          <h2 className="absolute bottom-5 left-8 text-white font-bold text-3xl">{name}</h2>
         </motion.div>
 
-        {/* Description Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="p-6"
-        >
-          <h2 className="text-lg font-bold text-secondary mb-3">{t("destination.description")}</h2>
-          <p className="text-sm text-muted leading-relaxed mb-6">
-            {description}
-          </p>
-
-          <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <button
-              type="button"
-              onClick={() => setIsBookingOpen(true)}
-              className="px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:brightness-110 transition-all flex-1"
-            >
-              {t("destination.bookNow")}
-            </button>
-
-            <button
-              type="button"
-              className="w-12 h-12 flex items-center justify-center bg-accent rounded-full text-white hover:brightness-110 transition-all"
-              aria-label={t("destination.call")}
-            >
-              <Phone size={20} />
-            </button>
-
-            <button
-              type="button"
-              className="w-12 h-12 flex items-center justify-center bg-accent rounded-full text-white hover:brightness-110 transition-all"
-              aria-label={t("destination.viewLocation")}
-            >
-              <MapPin size={20} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => toggleBookmark(destination.id)}
-              className={`w-12 h-12 flex items-center justify-center border-2 rounded-xl transition-all ${
-                bookmarked
-                  ? "border-primary bg-primary text-white"
-                  : "border-gray-200 text-secondary hover:border-primary hover:text-primary"
-              }`}
-              aria-label={bookmarked ? t("bookmarks.removeBookmark", { name }) : t("auth.saveToBookmarks")}
-            >
-              <Bookmark size={20} className={bookmarked ? "fill-white" : ""} />
-            </button>
-          </div>
-        </motion.section>
-
-        {/* Comments Section */}
+        {/* ── Photos full-width strip ── */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="p-6 pt-0"
+          className="px-8 py-8"
         >
-          <h2 className="text-lg font-bold text-secondary mb-4">{t("destination.comments")}</h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {COMMENTS.map((comment, i) => {
-              // We always use the English copy as requested by the user
-              const reviewData = comment.copy.en;
-              return (
-                <motion.div
-                  key={comment.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + i * 0.05 }}
-                  className={`bg-gray-50 rounded-2xl p-4 ${isRTL ? 'text-right' : 'text-left'}`}
-                >
-                  {/* User Info */}
-                  <div className={`flex items-center gap-2 mb-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <img
-                      src={comment.avatar}
-                      alt={reviewData.user}
-                      className="w-8 h-8 rounded-full object-cover"
-                      loading="lazy"
-                      width={32}
-                      height={32}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                        <span className="text-xs font-semibold text-secondary truncate">
-                          {reviewData.user}
-                        </span>
-                        {comment.verified && (
-                          <BadgeCheck
-                            size={12}
-                            className="text-accent flex-shrink-0"
-                            aria-label={t("destination.verified")}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Rating */}
-                  <div className={`flex items-center gap-0.5 mb-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    {[...Array(5)].map((_, idx) => (
-                      <Star
-                        key={idx}
-                        size={12}
-                        className={
-                          idx < comment.rating
-                            ? "text-primary fill-primary"
-                            : "text-gray-300"
-                        }
-                      />
-                    ))}
-                  </div>
-
-                  {/* Comment Text */}
-                  <p className="text-xs text-muted leading-relaxed line-clamp-3">
-                    {reviewData.text}
-                  </p>
-                </motion.div>
-              );
-            })}
+          <div className="flex items-center justify-between mb-4 w-full px-8">
+            <h3 className="text-sm font-semibold" style={{ color: "#2B2D42" }}>
+              {t("destination.photos")}
+            </h3>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => scrollCarousel(-1)}
+                className="w-10 h-10 flex items-center justify-center rounded-full border bg-white transition-colors hover:bg-gray-50 shadow-sm"
+                style={{ borderColor: "#e0e0e0" }}
+              >
+                {isRTL ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollCarousel(1)}
+                className="w-10 h-10 flex items-center justify-center rounded-full border bg-white transition-colors hover:bg-gray-50 shadow-sm"
+                style={{ borderColor: "#e0e0e0" }}
+              >
+                {isRTL ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+              </button>
+            </div>
+          </div>
+          <div
+            ref={carouselRef}
+            className="flex gap-4 overflow-x-auto pb-4 px-8 cursor-grab active:cursor-grabbing"
+            onMouseDown={handleMouseDown}
+            onMouseLeave={handleMouseLeave}
+            onMouseUp={handleMouseUp}
+            onMouseMove={handleMouseMove}
+            style={{
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            {carouselImages.map((img, i) => (
+              <motion.div
+                key={img.id}
+                className="flex-shrink-0 overflow-hidden"
+                style={{
+                  width: "180px",
+                  height: "220px",
+                  borderRadius: "16px",
+                  boxShadow: "0px 4px 12px rgba(0,0,0,0.10)",
+                }}
+              >
+                <img
+                  src={img.src}
+                  alt={img.alt}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </motion.div>
+            ))}
           </div>
         </motion.section>
 
-        {/* Bottom Padding */}
-        <div className="h-8" />
+        {/* ── Combined Description and Comments container ── */}
+        <div className={`px-8 pb-12 grid grid-cols-1 md:grid-cols-2 gap-12 ${isRTL ? "text-right" : "text-left"}`}>
+          
+          {/* Description */}
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <h3 className="text-lg font-bold mb-4" style={{ color: "#2B2D42" }}>
+              {t("destination.description")}
+            </h3>
+            <p className="text-sm leading-relaxed mb-6" style={{ color: "#6B7280" }}>
+              {description}
+            </p>
+
+            <div className={`flex items-center gap-3 ${isRTL ? "flex-row-reverse" : ""}`}>
+              <button
+                type="button"
+                onClick={() => setIsBookingOpen(true)}
+                className="font-semibold text-white transition-all hover:brightness-110"
+                style={{
+                  backgroundColor: "#d4800b",
+                  borderRadius: "14px",
+                  padding: "12px 28px",
+                  boxShadow: "0px 4px 4px 0px rgba(0,0,0,0.25)",
+                  fontSize: "15px",
+                }}
+              >
+                {t("destination.bookNow")}
+              </button>
+              <button
+                type="button"
+                className="w-12 h-12 flex items-center justify-center rounded-full text-white transition-all hover:brightness-110"
+                style={{ backgroundColor: "#d4800b", boxShadow: "0px 4px 4px 0px rgba(0,0,0,0.15)" }}
+                aria-label={t("destination.call")}
+              >
+                <Phone size={20} />
+              </button>
+              <button
+                type="button"
+                className="w-12 h-12 flex items-center justify-center rounded-full text-white transition-all hover:brightness-110"
+                style={{ backgroundColor: "#d4800b", boxShadow: "0px 4px 4px 0px rgba(0,0,0,0.15)" }}
+                aria-label={t("destination.viewLocation")}
+              >
+                <MapPin size={20} />
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleBookmark(destination.id)}
+                className="w-12 h-12 flex items-center justify-center rounded-xl border-2 transition-all"
+                style={{
+                  borderColor: bookmarked ? "#d4800b" : "#e5e7eb",
+                  backgroundColor: bookmarked ? "#d4800b" : "transparent",
+                  color: bookmarked ? "#fff" : "#2B2D42",
+                }}
+              >
+                <Bookmark size={20} className={bookmarked ? "fill-white" : ""} />
+              </button>
+            </div>
+          </motion.section>
+
+          {/* Comments */}
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <h3 className="text-lg font-bold mb-4" style={{ color: "#2B2D42" }}>
+              {t("destination.comments")}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {COMMENTS.map((comment, i) => {
+                const reviewData = comment.copy.en;
+                return (
+                  <div
+                    key={comment.id}
+                    className="p-4"
+                    style={{
+                      backgroundColor: "#E6E6D5",
+                      borderRadius: "16px",
+                      boxShadow: "2px 4px 4px 0px rgba(0,0,0,0.10)",
+                      border: "1px solid #f0f0f0",
+                    }}
+                  >
+                    <div className={`flex items-center gap-2 mb-3 ${isRTL ? "flex-row-reverse" : ""}`}>
+                      <img src={comment.avatar} alt={reviewData.user} className="w-9 h-9 rounded-full" />
+                      <span className="text-xs font-semibold" style={{ color: "#2B2D42" }}>{reviewData.user}</span>
+                      {comment.verified && <BadgeCheck size={12} style={{ color: "#d4800b" }} />}
+                    </div>
+                    <p className="text-xs leading-relaxed line-clamp-3" style={{ color: "#6B7280" }}>{reviewData.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.section>
+        </div>
+
+        <div className="h-10" />
       </main>
 
-      {/* Booking Modal */}
+      {/* Booking modal */}
       <BookingModal
         isOpen={isBookingOpen}
         onClose={() => setIsBookingOpen(false)}

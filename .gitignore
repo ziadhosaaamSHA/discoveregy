@@ -6,3 +6,5 @@ graphify-out
 .graphify_python
 GEMINI.md
 AGENTS.md
+.env
+CHAT_ASSISTANT_HANDOVER.md
