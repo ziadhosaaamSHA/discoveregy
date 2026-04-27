@@ -157,7 +157,7 @@ export default function DestinationDetail() {
               {/* Book Now — Figma: rounded rectangle 173×48, #d4800b */}
               <button
                 type="button"
-                onClick={() => navigate(`/plans?destId=${destination.id}`)}
+                onClick={() => navigate(`/pay?destId=${destination.id}`)}
                 className="font-semibold text-white transition-all hover:brightness-110"
                 style={{
                   backgroundColor: "#d4800b",

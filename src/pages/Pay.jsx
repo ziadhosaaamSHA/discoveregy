@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
@@ -95,6 +95,10 @@ function SuccessModal({ onClose }) {
 export default function PayPage() {
   const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const queryParams = new URLSearchParams(location.search);
+  const destId = queryParams.get("destId");
 
   const BookingSchema = Yup.object().shape({
     firstName: Yup.string().min(2, t("validation.nameMin2")).required(t("validation.required")),
@@ -108,8 +112,13 @@ export default function PayPage() {
   const initialValues = { firstName: "", lastName: "", address: "", date: "", phone: "", paymentMethod: "" };
 
   const handleSubmit = (values, { setSubmitting }) => {
-    console.log("Processing payment:", values);
-    navigate("/plans");
+    console.log("Processing Personal Details:", values);
+    // Save to local storage or state if needed
+    localStorage.setItem("user_booking_info", JSON.stringify(values));
+    
+    // Redirect to plans with the destination context preserved
+    const targetPath = destId ? `/plans?destId=${destId}` : "/plans";
+    navigate(targetPath);
     setSubmitting(false);
   };
 
