@@ -145,9 +145,9 @@ export default function Home() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {upcomingTrips.map((trip) => {
-                  const gName = typeof trip.guideName === 'object' ? (trip.guideName[language] || trip.guideName.en) : trip.guideName;
-                  const tType = typeof trip.tripType === 'object' ? (trip.tripType[language] || trip.tripType.en) : trip.tripType;
-                  const tDate = typeof trip.date === 'object' ? (trip.date[language] || trip.date.en) : trip.date;
+                  const gName = (trip.guideName && typeof trip.guideName === 'object') ? (trip.guideName[language] || trip.guideName.en) : (trip.guideName || "");
+                  const tType = (trip.tripType && typeof trip.tripType === 'object') ? (trip.tripType[language] || trip.tripType.en) : (trip.tripType || "");
+                  const tDate = (trip.date && typeof trip.date === 'object') ? (trip.date[language] || trip.date.en) : (trip.date || "");
 
                   return (
                     <motion.div

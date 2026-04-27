@@ -221,6 +221,8 @@ const TRANSLATIONS = {
       paymentMethodRequired: "Payment method is required",
       selectOneLanguage: "Select at least one language",
       selectNationality: "Nationality is required",
+      selectPlanFirst: "Please select a plan first!",
+      fillAllFields: "Please fill in all booking details (date, duration, and time).",
     },
     requests: {
       title: "Your Requests",
@@ -270,10 +272,19 @@ const TRANSLATIONS = {
       durationPlaceholder: "e.g. 5 hours",
       startTimePlaceholder: "e.g. 9:00 AM",
       submit: "Submit",
+      selectedStops: "Selected Stops",
+      addPlace: "Add Place",
+      searchPlaceholder: "Search sites, beaches, temples...",
+      emptyStops: "No places added yet. Use 'Add Place' to start.",
+      noResults: "No places found.",
+      tripDetails: "Trip Details",
     },
     plans: {
       title: "Plans",
       seeMore: "see more",
+      destinationsCount: "destinations",
+      recommendedFor: "Recommended Trips For",
+      recommendedDesc: "We've matched your selected destination with our best preset plans. Choose one below to start your adventure."
     },
   },
   ar: {
@@ -460,6 +471,8 @@ const TRANSLATIONS = {
       paymentMethodRequired: "طريقة الدفع مطلوبة",
       selectOneLanguage: "اختر لغة واحدة على الأقل",
       selectNationality: "الجنسية مطلوبة",
+      selectPlanFirst: "يرجى اختيار خطة أولاً!",
+      fillAllFields: "يرجى ملء جميع تفاصيل الحجز (التاريخ، المدة، والوقت).",
     },
     bookmarks: {
       title: "محفوظاتي ({{count}})",
@@ -532,10 +545,19 @@ const TRANSLATIONS = {
       durationPlaceholder: "مثل: 5 ساعات",
       startTimePlaceholder: "مثل: 9:00 صباحاً",
       submit: "تأكيد",
+      selectedStops: "المحطات المختارة",
+      addPlace: "إضافة مكان",
+      searchPlaceholder: "ابحث عن المواقع التاريخية، الشواطئ، المعابد...",
+      emptyStops: "لم يتم إضافة أماكن بعد. استخدم 'إضافة مكان' للبدء.",
+      noResults: "لم يتم العثور على أماكن.",
+      tripDetails: "تفاصيل الرحلة",
     },
     plans: {
       title: "الخطط",
       seeMore: "اعرف المزيد",
+      destinationsCount: "وجهة",
+      recommendedFor: "رحلات مقترحة لـ",
+      recommendedDesc: "لقد قمنا بمطابقة وجهتك المختارة مع أفضل خططنا الجاهزة. اختر إحداها أدناه لبدء مغامرتك."
     },
   },
 };
