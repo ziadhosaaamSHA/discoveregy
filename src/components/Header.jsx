@@ -50,17 +50,23 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [chatCount, setChatCount] = useState(0); // In production, this would come from a ChatsContext
   const langRef = useRef(null);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { bookmarkCount } = useBookmarks();
   const { language, setLanguage, t, supportedLanguages, isRTL } = useLanguage();
 
-  const NAV_LINKS = [
-    { label: t("common.home"), href: user ? "/home" : "/", icon: MapPin },
-    { label: t("common.explore"), href: user ? "/home#explore" : "/#explore", icon: Compass },
-    { label: t("common.aboutUs"), href: user ? "/home#about-us" : "/#about-us", icon: Info },
-  ];
+  const NAV_LINKS = user?.type === "guide" 
+    ? [
+        { label: t("requests.title"), href: "/requests", icon: MapPin },
+        { label: t("common.aboutUs"), href: "/#about-us", icon: Info },
+      ]
+    : [
+        { label: t("common.home"), href: user ? "/home" : "/", icon: MapPin },
+        { label: t("common.explore"), href: user ? "/home#explore" : "/#explore", icon: Compass },
+        { label: t("common.aboutUs"), href: user ? "/home#about-us" : "/#about-us", icon: Info },
+      ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -106,7 +112,7 @@ export default function Header() {
       >
         <div className="max-w-[1200px] mx-auto px-6 h-full flex items-center justify-between">
           {/* Logo */}
-          <a href="/" aria-label="Discover Egypt Home">
+          <Link to={user?.type === "guide" ? "/requests" : user ? "/home" : "/"} aria-label="Discover Egypt Home">
             <img
               src="/images/DiscoverEgyptLogo.png"
               alt="Discover Egypt"
@@ -114,7 +120,7 @@ export default function Header() {
               width={120}
               height={48}
             />
-          </a>
+          </Link>
 
           {/* Search Bar - Clickable to navigate */}
           <button
@@ -147,6 +153,24 @@ export default function Header() {
 
           {/* Auth & Language - Desktop */}
           <div className="flex items-center gap-4">
+            {/* Chats - only shown when logged in */}
+            {user && (
+              <Link
+                to="/chats"
+                className="relative hidden sm:flex items-center justify-center w-10 h-10 text-gray-800 hover:text-primary transition-colors"
+                aria-label={t("common.chats")}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-current">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" fill="currentColor"/>
+                </svg>
+                {chatCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#d43e0b] text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {chatCount}
+                  </span>
+                )}
+              </Link>
+            )}
+
             <Link
               to="/bookmarks"
               className="relative hidden sm:flex items-center justify-center w-10 h-10 text-gray-800 hover:text-primary transition-colors"

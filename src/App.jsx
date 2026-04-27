@@ -15,6 +15,11 @@ import Home from "./pages/Home";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { FloatingChatWidget } from "./components/ui/floating-chat-widget";
 import BookingForm from "./pages/Pay";
+import Requests from "./pages/Requests";
+import Chats from "./pages/Chats";
+import Plans from "./pages/Plans";
+import CreatePlan from "./pages/CreatePlan";
+import AvailableGuides from "./pages/AvailableGuides";
 
 function HomePage() {
   return (
@@ -33,7 +38,7 @@ function HomePage() {
 
 function App() {
   const location = useLocation();
-  const hideChat = ["/login", "/signup"].includes(location.pathname);
+  const hideChat = ["/login", "/signup"].includes(location.pathname) || location.pathname.startsWith("/chats");
 
   return (
     <>
@@ -42,6 +47,12 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/home" element={<Home />} />
           <Route path="/pay" element={<BookingForm />} />
+          <Route path="/requests" element={<Requests />} />
+          <Route path="/chats" element={<Chats />} />
+          <Route path="/chats/:conversationId" element={<Chats />} />
+          <Route path="/plans" element={<Plans />} />
+          <Route path="/create-plan" element={<CreatePlan />} />
+          <Route path="/available-guides" element={<AvailableGuides />} />
         </Route>
         <Route path="/search" element={<SearchResults />} />
         <Route path="/destination/:id" element={<DestinationDetail />} />

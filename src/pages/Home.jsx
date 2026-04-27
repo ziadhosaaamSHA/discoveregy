@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Star } from "lucide-react";
+import { Star, MessageCircle } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 import { DESTINATIONS } from "../data/destinations";
 import Header from "../components/Header";
@@ -116,13 +116,67 @@ function PopularCard({ dest, index }) {
 
 // ── Page ─────────────────────────────────────────────────────
 export default function Home() {
-  const { isRTL, t } = useLanguage();
+  const { isRTL, t, language } = useLanguage();
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F2E0CA" }}>
       <Header />
 
       <main className="pt-24 pb-16">
+        {/* ══ Upcoming Trips (Tourists) ═══════════════════════ */}
+        {(() => {
+          const upcomingTrips = JSON.parse(localStorage.getItem("upcoming_trips") || "[]");
+          if (upcomingTrips.length === 0) return null;
+
+          return (
+            <section
+              id="upcoming-trips"
+              className="max-w-[1200px] mx-auto px-6 py-12 lg:pt-8 lg:pb-0"
+            >
+              <motion.h2
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="text-[32px] lg:text-[38px] font-bold text-black text-center mb-10"
+              >
+                {t("destination.upcomingTrips") || "Your Upcoming Trips"}
+              </motion.h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {upcomingTrips.map((trip) => {
+                  const gName = typeof trip.guideName === 'object' ? (trip.guideName[language] || trip.guideName.en) : trip.guideName;
+                  const tType = typeof trip.tripType === 'object' ? (trip.tripType[language] || trip.tripType.en) : trip.tripType;
+                  const tDate = typeof trip.date === 'object' ? (trip.date[language] || trip.date.en) : trip.date;
+
+                  return (
+                    <motion.div
+                      key={trip.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`bg-[#154d7d] rounded-2xl p-5 shadow-lg flex items-center gap-4 ${isRTL ? "flex-row-reverse text-right" : "text-left"}`}
+                    >
+                      <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#f2e0ca]/30 flex-shrink-0">
+                        <img src={trip.guideImage} alt={gName} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-[#f2e0ca] font-bold truncate">{gName}</h3>
+                        <p className="text-[#f2e0ca]/70 text-xs truncate">{tType}</p>
+                        <p className="text-[#f2e0ca]/50 text-[10px] mt-1">{tDate}</p>
+                      </div>
+                      <Link
+                        to={`/chats/${trip.conversationId}`}
+                        className="w-10 h-10 rounded-full bg-[#f2e0ca] flex items-center justify-center hover:bg-white transition-colors flex-shrink-0"
+                      >
+                        <MessageCircle size={18} className="text-[#154d7d]" />
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })()}
 
         {/* ══ Current Activities ══════════════════════════════ */}
         <section
@@ -137,7 +191,6 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
             className="text-[32px] lg:text-[38px] font-bold text-black text-center mb-10"
-            style={{ fontFamily: "'Georgia', serif" }}
           >
             {t("destination.currentActivities")}
           </motion.h2>
@@ -168,7 +221,6 @@ export default function Home() {
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
               className="text-[32px] lg:text-[38px] font-bold text-black text-center mb-10"
-              style={{ fontFamily: "'Georgia', serif" }}
             >
               {t("destination.popularAttractions")}
             </motion.h2>

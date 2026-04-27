@@ -8,13 +8,13 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 
 // Figma assets
-const imgBackground    = "http://localhost:3845/assets/60854d0f90c724d6a8d1ba05aa4e38b870012968.png";
-const imgSmartphone    = "http://localhost:3845/assets/c8c5dd0d1c7608aaca2f024c896b513ec2017668.png";
-const imgTraveller     = "http://localhost:3845/assets/c8dfa6312c2d8ae9f9373b8ebeb680371e67d3a1.png";
-const imgBackIcon      = "http://localhost:3845/assets/6235413aa7ab9a66ee4722fb5888215567271838.svg";
-const imgDeviconGoogle = "http://localhost:3845/assets/999bcb7d25735ca4686374c0705b5e744ead0ba8.svg";
-const imgInstagram     = "http://localhost:3845/assets/87e560a6cf646bc9e704bfcb99191e4086b80c9d.svg";
-const imgFacebook      = "http://localhost:3845/assets/3a5b2589104f8c803aa1fc6cf148dada39e075d8.svg";
+const imgBackground    = "/public/images/60854d0f90c724d6a8d1ba05aa4e38b870012968.jpg";
+const imgSmartphone    = "/public/images/c8c5dd0d1c7608aaca2f024c896b513ec2017668.png";
+const imgTraveller     = "/public/images/c8dfa6312c2d8ae9f9373b8ebeb680371e67d3a1.png";
+const imgBackIcon      = "/public/images/back-svgrepo-com 1.svg";
+const imgDeviconGoogle = "/public/images/devicon_google.svg";
+const imgInstagram     = "/public/images/instagram 3.svg";
+const imgFacebook      = "/public/images/Group 340.svg";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -32,7 +32,14 @@ export default function Login() {
     setError("");
     const result = login(values.email, values.password);
     if (result.success) {
-      navigate("/home");
+      // Role-based redirection: guide -> requests, tourist -> home
+      const users = JSON.parse(localStorage.getItem("degy_users") || "[]");
+      const loggedInUser = users.find(u => u.email === values.email);
+      if (loggedInUser?.type === "guide") {
+        navigate("/requests");
+      } else {
+        navigate("/home");
+      }
     } else {
       setError(t("auth.loginError"));
     }
@@ -52,10 +59,10 @@ export default function Login() {
       {/* Back button */}
       <Link
         to="/"
-        className="absolute top-8 left-8 z-20 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
+        className={`absolute top-8 ${isRTL ? "right-8" : "left-8"} z-20 w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors`}
         aria-label={t("common.close")}
       >
-        <img src={imgBackIcon} alt="back" className="w-full h-full" />
+        <img src={imgBackIcon} alt="back" className={`w-full h-full ${isRTL ? "rotate-180" : ""}`} />
       </Link>
 
       {/* Large beige rounded card */}
@@ -71,7 +78,7 @@ export default function Login() {
             className="font-extrabold text-3xl"
             style={{ color: "#d4800b", fontFamily: "Inter, sans-serif" }}
           >
-            Log In Now
+            {t("auth.loginTitle")}
           </h1>
           <p className="text-lg font-medium mt-1" style={{ color: "#837e77" }}>
             {t("auth.loginSubtitle")}
@@ -221,7 +228,7 @@ export default function Login() {
                 </p>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex-1 h-px" style={{ backgroundColor: "#e0e0e0" }} />
-                  <span className="text-sm font-semibold" style={{ color: "#80888a" }}>Or</span>
+                  <span className="text-sm font-semibold" style={{ color: "#80888a" }}>{t("auth.orConnect")}</span>
                   <div className="flex-1 h-px" style={{ backgroundColor: "#e0e0e0" }} />
                 </div>
                 <div className="flex justify-center gap-4">

@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -10,14 +9,13 @@ import { useBookmarks } from "../context/BookmarksContext";
 import { useLanguage } from "../context/LanguageContext";
 
 // Figma back icon
-const imgBackIcon = "http://localhost:3845/assets/6235413aa7ab9a66ee4722fb5888215567271838.svg";
+const imgBackIcon = "/public/images/back-svgrepo-com 1.svg";
 
 export default function DestinationDetail() {
   const { id }       = useParams();
   const navigate     = useNavigate();
   const { isBookmarked, toggleBookmark } = useBookmarks();
   const { t, language, isRTL }           = useLanguage();
-  const carouselRef  = useRef(null);
 
   // Handle drag-to-scroll
 
@@ -50,11 +48,6 @@ export default function DestinationDetail() {
     alt: `${name} photo ${i + 1}`,
   }));
 
-  const scrollCarousel = (dir) => {
-    if (!carouselRef.current) return;
-    carouselRef.current.scrollBy({ left: dir * 260, behavior: "smooth" });
-  };
-
   return (
     <div className={`min-h-screen ${isRTL ? "text-right" : "text-left"}`} style={{ backgroundColor: "#F2E0CA" }}>
 
@@ -69,7 +62,7 @@ export default function DestinationDetail() {
             className="w-10 h-10 flex items-center justify-center rounded-full transition-colors hover:bg-gray-100"
             aria-label={t("common.close")}
           >
-            <img src={imgBackIcon} alt="back" className="w-6 h-6" />
+            <img src={imgBackIcon} alt="back" className={`w-6 h-6 ${isRTL ? "rotate-180" : ""}`} />
           </button>
           <h1 className="text-lg font-semibold" style={{ color: "#2B2D42" }}>
             {t("destination.details")}
@@ -94,67 +87,53 @@ export default function DestinationDetail() {
             loading="eager"
           />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.35) 100%)" }} />
-          <h2 className="absolute bottom-5 left-8 text-white font-bold text-3xl">{name}</h2>
+          <h2 className={`absolute bottom-5 ${isRTL ? "right-8" : "left-8"} text-white font-bold text-3xl`}>{name}</h2>
         </motion.div>
 
-        {/* ── Photos full-width strip ── */}
+        {/* ── Photos Ribbon ── */}
         <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="px-8 py-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="py-12 overflow-hidden"
         >
-          <div className="flex items-center justify-between mb-4 w-full px-8">
-            <h3 className="text-sm font-semibold" style={{ color: "#2B2D42" }}>
+          <div className="px-8 mb-6">
+            <h3 className="text-xl font-bold" style={{ color: "#2B2D42" }}>
               {t("destination.photos")}
             </h3>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => scrollCarousel(-1)}
-                className="w-10 h-10 flex items-center justify-center rounded-full border bg-white transition-colors hover:bg-gray-50 shadow-sm"
-                style={{ borderColor: "#e0e0e0" }}
-              >
-                {isRTL ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollCarousel(1)}
-                className="w-10 h-10 flex items-center justify-center rounded-full border bg-white transition-colors hover:bg-gray-50 shadow-sm"
-                style={{ borderColor: "#e0e0e0" }}
-              >
-                {isRTL ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-              </button>
-            </div>
           </div>
-          <div
-            ref={carouselRef}
-            className="flex gap-4 overflow-x-auto pb-4 px-8"
-            style={{
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              WebkitOverflowScrolling: "touch",
-            }}
-          >
-            {carouselImages.map((img) => (
-              <motion.div
-                key={img.id}
-                className="flex-shrink-0 overflow-hidden"
-                style={{
-                  width: "180px",
-                  height: "220px",
-                  borderRadius: "16px",
-                  boxShadow: "0px 4px 12px rgba(0,0,0,0.10)",
-                }}
-              >
-                <img
-                  src={img.src}
-                  alt={img.alt}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </motion.div>
-            ))}
+
+          <div className="relative flex overflow-hidden" dir="ltr">
+            <motion.div
+              className="flex gap-6 pr-6"
+              animate={{ x: ["0%", "-50%"] }}
+              transition={{
+                duration: 15,
+                repeat: Infinity,
+                ease: "linear",
+                repeatType: "loop"
+              }}
+              style={{ width: "fit-content" }}
+            >
+              {[...carouselImages, ...carouselImages].map((img, idx) => (
+                <div
+                  key={idx}
+                  className="flex-shrink-0 overflow-hidden"
+                  style={{
+                    width: "220px",
+                    height: "280px",
+                    borderRadius: "24px",
+                    border: "1px solid rgba(0,0,0,0.05)",
+                  }}
+                >
+                  <img
+                    src={img.src}
+                    alt={img.alt}
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </motion.div>
           </div>
         </motion.section>
 
@@ -232,7 +211,7 @@ export default function DestinationDetail() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {COMMENTS.map((comment) => {
-                const reviewData = comment.copy.en;
+                const reviewData = comment.copy[language] || comment.copy.en;
                 return (
                   <div
                     key={comment.id}

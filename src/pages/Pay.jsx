@@ -95,7 +95,6 @@ function SuccessModal({ onClose }) {
 export default function PayPage() {
   const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
 
   const BookingSchema = Yup.object().shape({
     firstName: Yup.string().min(2, t("validation.nameMin2")).required(t("validation.required")),
@@ -110,7 +109,7 @@ export default function PayPage() {
 
   const handleSubmit = (values, { setSubmitting }) => {
     console.log("Processing payment:", values);
-    setShowModal(true);
+    navigate("/plans");
     setSubmitting(false);
   };
 
@@ -191,10 +190,6 @@ export default function PayPage() {
           </Formik>
         </motion.div>
       </main>
-
-      <AnimatePresence>
-        {showModal && <SuccessModal onClose={() => navigate("/home")} />}
-      </AnimatePresence>
     </div>
   );
 }
