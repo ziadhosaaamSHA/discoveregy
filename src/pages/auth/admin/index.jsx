@@ -8,13 +8,13 @@ import { useAuth } from "../../../context/AuthContext";
 import { useLanguage } from "../../../context/LanguageContext";
 
 // Figma assets
-const imgBackground    = "/public/images/60854d0f90c724d6a8d1ba05aa4e38b870012968.jpg";
-const imgSmartphone    = "/public/images/c8c5dd0d1c7608aaca2f024c896b513ec2017668.png";
-const imgTraveller     = "/public/images/c8dfa6312c2d8ae9f9373b8ebeb680371e67d3a1.png";
-const imgBackIcon      = "/public/images/back-svgrepo-com 1.svg";
-const imgDeviconGoogle = "/public/images/devicon_google.svg";
-const imgInstagram     = "/public/images/instagram 3.svg";
-const imgFacebook      = "/public/images/Group 340.svg";
+const imgBackground    = "/images/60854d0f90c724d6a8d1ba05aa4e38b870012968.jpg";
+const imgSmartphone    = "/images/c8c5dd0d1c7608aaca2f024c896b513ec2017668.png";
+const imgTraveller     = "/images/c8dfa6312c2d8ae9f9373b8ebeb680371e67d3a1.png";
+const imgBackIcon      = "/images/back-svgrepo-com 1.svg";
+const imgDeviconGoogle = "/images/devicon_google.svg";
+const imgInstagram     = "/images/instagram 3.svg";
+const imgFacebook      = "/images/Group 340.svg";
 
 // Login handles tourist and guide authentication entry into the app.
 export default function AdminLogin() {

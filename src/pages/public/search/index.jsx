@@ -126,7 +126,7 @@ export default function SearchResults() {
                   >
                     <div className="aspect-square rounded-2xl overflow-hidden mb-3 bg-gray-100">
                       <img
-                        src={resolveApiAssetUrl(baseUrl + dest.image)}
+                        src={resolveApiAssetUrl(dest.image)}
                         alt={data.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                         loading="lazy"

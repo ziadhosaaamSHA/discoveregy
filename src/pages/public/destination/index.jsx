@@ -7,11 +7,10 @@ import {
 import { useBookmarks } from "../../../context/BookmarksContext";
 import { useLanguage } from "../../../context/LanguageContext";
 import { tourismApi } from "../../../services/tourism-api";
-
+import { resolveApiAssetUrl } from "../../../services/api-client";
 // Figma back icon
-const imgBackIcon = "/public/images/back-svgrepo-com 1.svg";
+const imgBackIcon = "/images/back-svgrepo-com 1.svg";
 const DEFAULT_DESTINATION_VIDEO_URL = "https://www.youtube.com/watch?v=mfxQy5A_tHs";
-const baseUrl = "https://tourism-api-sha-e7g5guagcdc2dddv.westeurope-01.azurewebsites.net";
 
 
 function normalizeReview(review, index) {
@@ -202,7 +201,7 @@ function getEmbedUrl(url) {
     description = language === "ar" ? (placeDetails.descriptionAr || placeDetails.description) : (placeDetails.description || "");
     destinationVideoUrl = getEmbedUrl( placeDetails.videoUrl || DEFAULT_DESTINATION_VIDEO_URL);
   }
-  const heroImage = baseUrl + placeDetails?.imageUrl;
+  const heroImage = resolveApiAssetUrl(placeDetails?.imageUrl);
   const videoButtonLabel = language === "ar" ? "فيديو المكان" : "Place video";
   const displayedReviews = reviews
   const handleSubmitReview = async () => {

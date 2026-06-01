@@ -14,8 +14,7 @@ function buildFormData(payload = {}) {
 }
 export const tourismApi = {
   // Trips
-  // NOTE: trips list is relatively stable during a user session; cache briefly to reduce load
-  getTrips: () => apiRequest("/api/trips", { cache: { ttlSeconds: 120, persist: false } }),
+  getTrips: () => apiRequest("/api/trips"),
   createTrip: (payload) =>
     apiRequest("/api/trips", { method: "POST", body: buildFormData(payload) }),
   getTripById: (id) => apiRequest(`/api/trips/${id}`),
@@ -25,10 +24,9 @@ export const tourismApi = {
   getMyCustomTrips: () => apiRequest("/api/trips/custom/my"),
 
   // Places
-  getPlaces: () => apiRequest("/api/places", { cache: { ttlSeconds: 300, persist: true } }),
+  getPlaces: () => apiRequest("/api/places"),
   createPlace: (payload) => apiRequest("/api/places", { method: "POST", body: payload }),
-  // Individual place details can be cached for a short period and persisted for offline resilience
-  getPlaceById: (id) => apiRequest(`/api/places/${id}`, { cache: { ttlSeconds: 300, persist: true } }),
+  getPlaceById: (id) => apiRequest(`/api/places/${id}`),
   updatePlace: (id, payload) => apiRequest(`/api/places/${id}`, { method: "PUT", body: payload }),
   deletePlace: (id) => apiRequest(`/api/places/${id}`, { method: "DELETE" }),
 
@@ -69,8 +67,7 @@ export const tourismApi = {
 
   // Users
   getUsers: () => apiRequest("/api/users"),
-  // Guides list doesn't change frequently; cache for a bit to reduce noise
-  getGuides: () => apiRequest("/api/users/guides", { cache: { ttlSeconds: 600, persist: true } }),
+  getGuides: () => apiRequest("/api/users/guides"),
   getUserById: (id) => apiRequest(`/api/users/${id}`),
   deleteUserById: (id) => apiRequest(`/api/users/${id}`, { method: "DELETE" }),
   getUserRoles: (id) => apiRequest(`/api/users/${id}/roles`),
@@ -103,8 +100,7 @@ export const tourismApi = {
   deleteNotification: (id) => apiRequest(`/api/notifications/${id}`, { method: "DELETE" }),
 
   // Roles
-  // Roles are very stable; cache for longer
-  getRoles: () => apiRequest("/api/roles", { cache: { ttlSeconds: 3600, persist: true } }),
+  getRoles: () => apiRequest("/api/roles"),
   createRole: (payload) => apiRequest("/api/roles", { method: "POST", body: payload }),
   deleteRole: (id) => apiRequest(`/api/roles/${id}`, { method: "DELETE" }),
 

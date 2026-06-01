@@ -10,7 +10,7 @@ export function RecommendedDestinationBanner({ destination, language, isRTL, t }
     <div className="max-w-6xl mx-auto mb-10 px-2 animate-in fade-in slide-in-from-top-4 duration-700">
       <div className="bg-[#e67e22]/10 border border-[#e67e22]/20 rounded-[30px] p-6 flex flex-col md:flex-row items-center gap-6 shadow-sm">
         <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg flex-shrink-0">
-          <img src={baseUrl + destination.image} className="w-full h-full object-cover" alt="context" />
+          <img src={resolveApiAssetUrl(destination.image)} className="w-full h-full object-cover" alt="context" />
         </div>
         <div className="flex-1 text-center md:text-start">
           <div className={`flex items-center gap-2 mb-1 justify-center md:justify-start ${isRTL ? "flex-row-reverse" : ""}`}>

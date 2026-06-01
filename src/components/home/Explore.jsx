@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Navigation } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
-import { fetchDestinations, getFallbackDestinations } from "../../services/destinations-data";
+import { fetchDestinations } from "../../services/destinations-data";
 import { resolveApiAssetUrl } from "../../services/api-client";
 
 const FEATURED_IDS = [1, 5, 8];
@@ -19,7 +19,7 @@ const cardVariants = {
 
 export default function Explore() {
   const { t, language, isRTL } = useLanguage();
-  const [destinations, setDestinations] = useState(() => getFallbackDestinations());
+  const [destinations, setDestinations] = useState(() => []);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,7 +28,7 @@ export default function Explore() {
         const data = await fetchDestinations();
         if (!cancelled) setDestinations(data);
       } catch {
-        if (!cancelled) setDestinations(getFallbackDestinations());
+        if (!cancelled) setDestinations([]);
       }
     };
 
