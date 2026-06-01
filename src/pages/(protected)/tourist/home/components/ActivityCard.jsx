@@ -45,7 +45,7 @@ export function ActivityCard({ dest, index }) {
 
       <div className={`w-[210px] shrink-0 ${isLeft ? "order-2" : "order-1"}`}>
         <img
-          src={resolveApiAssetUrl(TOURISM_BASE_URL + dest.image)}
+          src={resolveApiAssetUrl(dest.image)}
           alt={data.name}
           className="w-full h-full object-cover"
           style={{ borderRadius: imgRadius }}

@@ -14,7 +14,7 @@ export function PopularCard({ dest, index }) {
       <Link to={`/tourist/destination/${dest.id}`} className="block group">
         <div className="relative h-[155px] rounded-[16px] overflow-hidden">
           <img
-            src={resolveApiAssetUrl(TOURISM_BASE_URL + dest.image)}
+            src={resolveApiAssetUrl(dest.image)}
             alt={data.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
