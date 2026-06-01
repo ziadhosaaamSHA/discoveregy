@@ -185,13 +185,34 @@ async function refreshAccessToken() {
   }
 }
 
-export async function apiRequest(path, options = {}, retry = true) {
+async function apiRequestInternal(path, options = {}, retry = true) {
   const {
     method = "GET",
     auth = true,
     headers = {},
     body,
   } = options;
+  // Caching: opt-in per-request using options.cache when the feature flag is enabled
+  const ENABLE_API_CACHE = import.meta.env.VITE_ENABLE_API_CACHE === "true";
+  const cacheOption = options.cache || false;
+  const cacheTTL = typeof options.cacheTTL === "number" ? options.cacheTTL : 5 * 60 * 1000; // default 5 minutes
+
+  // Simple in-memory cache map: key -> { expiresAt, data }
+  if (!globalThis.__degyApiCache) globalThis.__degyApiCache = new Map();
+  const cacheMap = globalThis.__degyApiCache;
+
+  function makeCacheKey(p, opts) {
+    // Only cache GET requests; include method, url, and body for uniqueness
+    const m = (opts.method || "GET").toUpperCase();
+    let b = "";
+    try {
+      if (opts.body && typeof opts.body === "string") b = opts.body;
+      else if (opts.body && typeof opts.body === "object") b = JSON.stringify(opts.body);
+    } catch {
+      b = String(opts.body || "");
+    }
+    return `${m}::${toUrl(p)}::${b}`;
+  }
 
   const requestHeaders = { Accept: "application/json", ...headers };
   const finalOptions = { method, headers: requestHeaders };
@@ -200,6 +221,17 @@ export async function apiRequest(path, options = {}, retry = true) {
     const token = getAccessToken();
     if (token) {
       requestHeaders.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  // Try cache for GET requests when enabled and requested
+  const isGet = (method || "GET").toUpperCase() === "GET";
+  const shouldUseCache = ENABLE_API_CACHE && cacheOption && isGet;
+  const cacheKey = shouldUseCache ? makeCacheKey(path, { method, body }) : null;
+  if (shouldUseCache && cacheKey) {
+    const entry = cacheMap.get(cacheKey);
+    if (entry && entry.expiresAt > Date.now()) {
+      return entry.data;
     }
   }
 
@@ -238,6 +270,47 @@ export async function apiRequest(path, options = {}, retry = true) {
 
   return data;
 }
+
+// Cache helpers
+export function clearApiCache(keyPrefix) {
+  if (!globalThis.__degyApiCache) return;
+  if (!keyPrefix) {
+    globalThis.__degyApiCache.clear();
+    return;
+  }
+  for (const k of Array.from(globalThis.__degyApiCache.keys())) {
+    if (k.startsWith(keyPrefix)) globalThis.__degyApiCache.delete(k);
+  }
+}
+
+export function setApiCache(path, options, data, ttl = 5 * 60 * 1000) {
+  const cacheMap = globalThis.__degyApiCache || new Map();
+  globalThis.__degyApiCache = cacheMap;
+  const key = `${(options.method || "GET").toUpperCase()}::${toUrl(path)}::${typeof options.body === 'string' ? options.body : JSON.stringify(options.body || {})}`;
+  cacheMap.set(key, { expiresAt: Date.now() + ttl, data });
+}
+
+// Wrap fetch with optional cache set when successful
+const originalApiRequest = apiRequestInternal;
+// We replace exported apiRequest with a wrapper that will set cache entries when requested
+export async function apiRequestWithCache(path, options = {}, retry = true) {
+  const res = await originalApiRequest(path, options, retry);
+  try {
+    const ENABLE_API_CACHE = import.meta.env.VITE_ENABLE_API_CACHE === "true";
+    const cacheOption = options.cache || false;
+    const cacheTTL = typeof options.cacheTTL === "number" ? options.cacheTTL : 5 * 60 * 1000;
+    const isGet = (options.method || "GET").toUpperCase() === "GET";
+    if (ENABLE_API_CACHE && cacheOption && isGet) {
+      setApiCache(path, options, res, cacheTTL);
+    }
+  } catch (e) {
+    // ignore cache set errors
+  }
+  return res;
+}
+
+// Re-export apiRequest name used by other modules
+export { apiRequestWithCache as apiRequest };
 
 export function unwrapPayload(responseData) {
   if (!responseData || typeof responseData !== "object") return responseData;

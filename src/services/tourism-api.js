@@ -14,7 +14,7 @@ function buildFormData(payload = {}) {
 }
 export const tourismApi = {
   // Trips
-  getTrips: () => apiRequest("/api/trips"),
+  getTrips: () => apiRequest("/api/trips", { cache: true, cacheTTL: 5 * 60 * 1000 }),
   createTrip: (payload) =>
     apiRequest("/api/trips", { method: "POST", body: buildFormData(payload) }),
   getTripById: (id) => apiRequest(`/api/trips/${id}`),
@@ -24,9 +24,9 @@ export const tourismApi = {
   getMyCustomTrips: () => apiRequest("/api/trips/custom/my"),
 
   // Places
-  getPlaces: () => apiRequest("/api/places"),
+  getPlaces: () => apiRequest("/api/places", { cache: true, cacheTTL: 5 * 60 * 1000 }),
   createPlace: (payload) => apiRequest("/api/places", { method: "POST", body: payload }),
-  getPlaceById: (id) => apiRequest(`/api/places/${id}`),
+  getPlaceById: (id) => apiRequest(`/api/places/${id}`, { cache: true, cacheTTL: 5 * 60 * 1000 }),
   updatePlace: (id, payload) => apiRequest(`/api/places/${id}`, { method: "PUT", body: payload }),
   deletePlace: (id) => apiRequest(`/api/places/${id}`, { method: "DELETE" }),
 
@@ -66,8 +66,8 @@ export const tourismApi = {
   markMessagesRead: (conversationId) => apiRequest(`/api/messages/${conversationId}/read`, { method: "PUT" }),
 
   // Users
-  getUsers: () => apiRequest("/api/users"),
-  getGuides: () => apiRequest("/api/users/guides"),
+  getUsers: () => apiRequest("/api/users", { cache: true, cacheTTL: 5 * 60 * 1000 }),
+  getGuides: () => apiRequest("/api/users/guides", { cache: true, cacheTTL: 5 * 60 * 1000 }),
   getUserById: (id) => apiRequest(`/api/users/${id}`),
   deleteUserById: (id) => apiRequest(`/api/users/${id}`, { method: "DELETE" }),
   getUserRoles: (id) => apiRequest(`/api/users/${id}/roles`),
