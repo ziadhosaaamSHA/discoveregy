@@ -6,7 +6,7 @@ import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext";
 import { BookmarksProvider } from "./context/BookmarksContext";
 import { LanguageProvider } from "./context/LanguageContext";
-import ScrollToTop from "./components/ScrollToTop";
+import ScrollToTop from "./components/common/ScrollToTop";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

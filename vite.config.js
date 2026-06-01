@@ -21,6 +21,15 @@ export default defineConfig({
         target: 'https://api.tavily.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/tavily/, '/search'),
+      },
+      '/api': {
+        target: 'https://tourism-api-sha-e7g5guagcdc2dddv.westeurope-01.azurewebsites.net',
+        changeOrigin: true,
+      },
+      '/youtube': {
+        target: 'https://www.youtube.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/youtube/, ''),
       }
     }
   }

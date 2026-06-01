@@ -1,10 +1,16 @@
-import { DESTINATIONS } from "../data/destinations";
+import { fetchDestinations } from "./destinations-data";
 
 const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN;
 const MODEL_NAME = "gpt-4o-mini";
 
 export async function generateTravelPlan(prompt, language = 'en') {
-  const destList = DESTINATIONS.map(d => `- ID: ${d.id} | Name: ${d.copy.en.name} | Location: ${d.copy.en.location}`).join('\n');
+  // Load real destinations from the API (merged with any static fallbacks by the helper)
+  const destinations = await fetchDestinations().catch((err) => {
+    console.error("Failed to load destinations for AI prompt:", err);
+    return [];
+  });
+
+  const destList = destinations.map(d => `- ID: ${d.id} | Name: ${d.copy?.en?.name || d.copy?.name || 'Unknown'} | Location: ${d.copy?.en?.location || d.copy?.location || 'Egypt'}`).join('\n');
   
   const systemPrompt = `You are the Discover Egypt Travel Architect.
 Your mission is to generate 3 distinct travel plan options based on the user's prompt.
@@ -46,18 +52,25 @@ Response format: [{"id": "p1", "title": "...", "description": "...", "destinatio
       const jsonString = content.replace(/^```json/, '').replace(/```$/, '');
       const aiPlans = JSON.parse(jsonString);
       
-      return aiPlans.map(plan => ({
-        id: plan.id,
-        title: plan.title,
-        text: plan.description,
-        // Map destination IDs to full objects
-        destinations: plan.destinations.map(id => DESTINATIONS.find(d => d.id === Number(id))).filter(Boolean),
-        image: DESTINATIONS.find(d => d.id === Number(plan.destinations[0]))?.image || "https://images.unsplash.com/photo-1539650116574-8efeb43e2b50?auto=format&fit=crop&q=80&w=800"
-      }));
+      return aiPlans.map(plan => {
+        const planDestIds = Array.isArray(plan.destinations) ? plan.destinations.map(String) : [];
+        const matched = destinations.filter(d => planDestIds.includes(String(d.id)));
+        return {
+          id: plan.id,
+          title: plan.title,
+          text: plan.description,
+          destinations: matched,
+          image: matched[0]?.image || "https://images.unsplash.com/photo-1539650116574-8efeb43e2b50?auto=format&fit=crop&q=80&w=800",
+        };
+      });
     }
     throw new Error("Invalid AI response");
   } catch (err) {
-    console.error("AI Plan Generation Error:", err);
-    throw err;
+    let errorMessage = "AI Plan Generation Error: " + err.message;
+    if (err.message.includes("Failed to fetch") || err.name === "TypeError") {
+      errorMessage = "Connection error. Please check your internet or GITHUB_TOKEN.";
+    }
+    console.error(errorMessage, err);
+    throw new Error(errorMessage);
   }
 }

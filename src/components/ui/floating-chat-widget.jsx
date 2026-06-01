@@ -11,7 +11,7 @@ import {
   RotateCcw
 } from "lucide-react";
 import { useCallback, useState, useRef, useEffect } from "react";
-import { DESTINATIONS } from "@/data/destinations";
+import { fetchDestinations } from "@/services/destinations-data";
 import { useLanguage } from "@/context/LanguageContext";
 import ReactMarkdown from 'react-markdown';
 
@@ -55,6 +55,7 @@ export function FloatingChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [places, setPlaces] = useState([]);
   const { language, isRTL } = useLanguage();
   
   const chatEndRef = useRef(null);
@@ -67,6 +68,21 @@ export function FloatingChatWidget() {
   const scrollToBottom = () => chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
 
   useEffect(() => { if (isOpen) scrollToBottom(); }, [messages, isOpen, isLoading]);
+
+  // Load destinations from API for use in AI prompts
+  useEffect(() => {
+    let mounted = true;
+    fetchDestinations()
+      .then((data) => {
+        if (!mounted) return;
+        setPlaces(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error("Failed to load destinations for chat widget:", err);
+        setPlaces([]);
+      });
+    return () => { mounted = false; };
+  }, []);
 
   const toggleOpen = useCallback(() => setIsOpen((prev) => !prev), []);
 
@@ -112,7 +128,7 @@ export function FloatingChatWidget() {
     setIsLoading(true);
 
     try {
-      const destList = DESTINATIONS.map(d => `- ${d.copy.en.name} (${d.copy.en.location})`).join('\n');
+      const destList = (places || []).map(d => `- ${d.copy?.en?.name || d.copy?.name || 'Unknown'} (${d.copy?.en?.location || d.copy?.location || 'Egypt'})`).join('\n');
       const currentDate = new Date().toLocaleDateString();
       
       const systemPrompt = `You are the Discover Egypt AI Guide.

@@ -3,16 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, MoreVertical, Paperclip, Send, X, Download, Eye } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 
-const MOCK_MESSAGES = [
-  { id: "1", text: "Where do you wanna go?", sender: "guide", timestamp: "10:30 AM" },
-  { id: "2", text: "I want Luxor", sender: "tourist", timestamp: "10:32 AM" },
-  { id: "3", text: "Okay Then, I can arrange that for you. What date suits you best?", sender: "guide", timestamp: "10:35 AM" },
-];
-
-export function ChatDetail({ conversation, onBack }) {
+export function ChatDetail({ conversation, onBack, messages = [], onSendMessage, isLoading = false }) {
   const { t, isRTL } = useLanguage();
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState(MOCK_MESSAGES);
   const [showMenu, setShowMenu] = useState(false);
   const [attachment, setAttachment] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
@@ -27,22 +20,15 @@ export function ChatDetail({ conversation, onBack }) {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!message.trim() && !attachment) return;
-    
-    const newMessage = {
-      id: Date.now().toString(),
-      text: message,
-      sender: "guide",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      attachment: attachment ? { 
-        name: attachment.name, 
-        type: attachment.type,
-        url: attachment.url 
-      } : null
-    };
-    
-    setMessages([...messages, newMessage]);
+
+    if (onSendMessage) {
+      await onSendMessage({
+        content: message,
+        attachment,
+      });
+    }
     setMessage("");
     setAttachment(null);
   };
@@ -133,6 +119,11 @@ export function ChatDetail({ conversation, onBack }) {
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 scrollbar-hide bg-[#F2E0CA]">
+        {isLoading && (
+          <div className="text-center text-sm text-black/40 italic py-4">
+            {t("common.loading") || "Loading..."}
+          </div>
+        )}
         {messages.map((msg) => (
           <motion.div
             key={msg.id}

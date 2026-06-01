@@ -2,6 +2,7 @@ export const DESTINATIONS = [
   {
     id: 1,
     image: "https://images.unsplash.com/photo-1557640047-75c97a5f1ea4?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/LuVJfY6gf3A",
     price: "$5.42k",
     duration: { en: "10 Days Trip", ar: "رحلة لمدة 10 أيام" },
     rating: 4.8,
@@ -24,6 +25,7 @@ export const DESTINATIONS = [
   {
     id: 2,
     image: "https://images.unsplash.com/photo-1644517270263-4112379d97ca?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/5J6m2R6oA3Y",
     price: "$3.8k",
     duration: { en: "7 Days Trip", ar: "رحلة لمدة 7 أيام" },
     rating: 4.9,
@@ -46,6 +48,7 @@ export const DESTINATIONS = [
   {
     id: 3,
     image: "https://images.unsplash.com/photo-1594808815295-52034d585f56?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/Q0mWfA2G8KQ",
     price: "$2.5k",
     duration: { en: "5 Days Trip", ar: "رحلة لمدة 5 أيام" },
     rating: 4.6,
@@ -68,6 +71,7 @@ export const DESTINATIONS = [
   {
     id: 4,
     image: "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/eRte0f6Q9P8",
     price: "$4.2k",
     duration: { en: "8 Days Trip", ar: "رحلة لمدة 8 أيام" },
     rating: 4.7,
@@ -90,6 +94,7 @@ export const DESTINATIONS = [
   {
     id: 5,
     image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/6M8M6z5Q6x4",
     price: "$1.8k",
     duration: { en: "3 Days Trip", ar: "رحلة لمدة 3 أيام" },
     rating: 4.5,
@@ -112,6 +117,7 @@ export const DESTINATIONS = [
   {
     id: 6,
     image: "https://images.unsplash.com/photo-1651871756929-09d7bde4e97d?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/1rwfW7f8J6Q",
     price: "$3.2k",
     duration: { en: "6 Days Trip", ar: "رحلة لمدة 6 أيام" },
     rating: 4.9,
@@ -134,6 +140,7 @@ export const DESTINATIONS = [
   {
     id: 7,
     image: "https://images.unsplash.com/photo-1689876405589-666038511bf9?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/7WJkY9d8s2M",
     price: "$4.8k",
     duration: { en: "9 Days Trip", ar: "رحلة لمدة 9 أيام" },
     rating: 4.8,
@@ -156,6 +163,7 @@ export const DESTINATIONS = [
   {
     id: 8,
     image: "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/V6_hf6r9M2A",
     price: "$15k",
     duration: { en: "28 Days Trip", ar: "رحلة لمدة 28 يومًا" },
     rating: 5.0,
@@ -178,6 +186,7 @@ export const DESTINATIONS = [
   {
     id: 9,
     image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/2YvP5r9cK4E",
     price: "$2.9k",
     duration: { en: "5 Days Trip", ar: "رحلة لمدة 5 أيام" },
     rating: 4.6,
@@ -200,6 +209,7 @@ export const DESTINATIONS = [
   {
     id: 10,
     image: "https://images.unsplash.com/photo-1695178234643-9656316a0e66?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/8n3Qk1Jf4tU",
     price: "$6.5k",
     duration: { en: "12 Days Trip", ar: "رحلة لمدة 12 يومًا" },
     rating: 4.9,
@@ -222,6 +232,7 @@ export const DESTINATIONS = [
   {
     id: 11,
     image: "https://images.unsplash.com/photo-1738580428773-ac5ab22c5b80?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/4dN8m2Lq7Fw",
     price: "$7.2k",
     duration: { en: "14 Days Trip", ar: "رحلة لمدة 14 يومًا" },
     rating: 4.9,
@@ -244,6 +255,7 @@ export const DESTINATIONS = [
   {
     id: 12,
     image: "https://images.unsplash.com/photo-1665643956022-ee053e925743?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/9qL5u3Bv2Xs",
     price: "$4.5k",
     duration: { en: "7 Days Trip", ar: "رحلة لمدة 7 أيام" },
     rating: 4.7,
@@ -266,6 +278,7 @@ export const DESTINATIONS = [
   {
     id: 13,
     image: "https://images.unsplash.com/photo-1710211288826-b7df3ab71588?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/3mR8k2Zc5Nd",
     price: "$1.2k",
     duration: { en: "2 Days Trip", ar: "رحلة لمدة يومين" },
     rating: 4.4,
@@ -288,6 +301,7 @@ export const DESTINATIONS = [
   {
     id: 14,
     image: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=400&h=400&fit=crop",
+    videoUrl: "https://rr1---sn-4g5ednsl.googlevideo.com/videoplayback?expire=1778451028&ei=NOYAarvtKIeRoccP2ZijyQs&ip=156.206.15.109&id=fb3456a32dac20df&itag=22&source=contrib_service_notebooklm&begin=0&requiressl=yes&xpc=EghoqJzIP3oBAQ==&rms=su,su&sc=yes&susc=nblm&app=fife&ic=1045&eaua=4FkrhQB4E18&pcm2=yes&mime=video/mp4&vprv=1&rqh=1&dur=420.443&lmt=1778443484376431&txp=0011224&sparams=expire,ei,ip,id,itag,source,requiressl,xpc,susc,app,ic,eaua,pcm2,mime,vprv,rqh,dur,lmt&sig=AHEqNM4wRQIhAMW-H9VNiERnI0NbRZ5cSZuyOoI2Leq-Tr_QY_6tkz5fAiBWVtYl2StbbC51rbvqgnllDWGnfgIUuMNGbrMNl7qoyg==&redirect_counter=1&cm2rm=sn-hgnse76&rrc=191&req_id=2125f4a481c4a3ee&cms_redirect=yes&cmsv=e&met=1778443828,&mh=kB&mm=34&mn=sn-4g5ednsl&ms=ltu&mt=1778443708&mv=m&mvi=1&pl=19&lsparams=met,mh,mm,mn,ms,mv,mvi,pl,rms,sc&lsig=APaTxxMwRQIhAOzR_2MovdB68fDswmHOxdKqJS4tmSoQhAY7NARndGqhAiAHb6xaj2EkxPDzkH0G7MjIbMNX95gMJhIyO-mLYs-oLg%3D%3D",
     price: "$3.8k",
     duration: { en: "4 Days Trip", ar: "رحلة لمدة 4 أيام" },
     rating: 4.8,
@@ -310,6 +324,7 @@ export const DESTINATIONS = [
   {
     id: 15,
     image: "https://images.unsplash.com/photo-1633104647161-267fdae94687?w=400&h=400&fit=crop",
+    videoUrl: "https://www.youtube.com/embed/5pN7x4Kw8Lf",
     price: "$1.5k",
     duration: { en: "2 Days Trip", ar: "رحلة لمدة يومين" },
     rating: 4.6,

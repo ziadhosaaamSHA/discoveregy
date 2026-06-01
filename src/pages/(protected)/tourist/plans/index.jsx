@@ -1,0 +1,317 @@
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useLanguage } from "../../../../context/LanguageContext";
+import * as plansBackend from "./backend/plansBackend";
+import { BookingSettings } from "./components/BookingSettings";
+import { BookingStatusModal } from "./components/BookingStatusModal";
+import { PlansGrid } from "./components/PlansGrid";
+import { PlansHeader } from "./components/PlansHeader";
+import { RecommendedDestinationBanner } from "./components/RecommendedDestinationBanner";
+import {
+  extractArray,
+  extractBookingId,
+  getSavedDurationHours,
+  getSavedStartTime,
+  mapPaymentMethod,
+  mapTripToPlan,
+  parseBookingDateTime,
+  readBookingInfo,
+} from "./components/planUtils";
+
+// Plans lets the user choose a generated or custom travel plan before booking.
+export default function Plans() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isRTL, language, t } = useLanguage();
+
+  const queryParams = new URLSearchParams(location.search);
+  const destId = queryParams.get("destId") ? Number(queryParams.get("destId")) : null;
+  const [destinations, setDestinations] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [tripDetailsById, setTripDetailsById] = useState({});
+
+  const [selectedPlanId, setSelectedPlanId] = useState(null);
+  const [startTime, setStartTime] = useState(getSavedStartTime);
+  const [durationHours, setDurationHours] = useState(getSavedDurationHours);
+  const [deletingPlanId, setDeletingPlanId] = useState(null);
+  const [isLoadingDestinations, setIsLoadingDestinations] = useState(true);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(true);
+  const [hasLoadingDelay, setHasLoadingDelay] = useState(true);
+  const [plansError, setPlansError] = useState("");
+  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
+  const [bookingStatus, setBookingStatus] = useState({ isOpen: false, isSuccess: false, message: "" });
+  const bookingInfo = useMemo(() => readBookingInfo(), []);
+  const bookingDate = String(bookingInfo.date || "");
+  const parsedDurationHours = Number(durationHours);
+  const hasValidBookingDetails =
+    /^\d{4}-\d{2}-\d{2}$/.test(bookingDate) &&
+    /^([01]\d|2[0-3]):([0-5]\d)$/.test(startTime) &&
+    Number.isInteger(parsedDurationHours) &&
+    parsedDurationHours > 0;
+
+  const destinationMap = useMemo(
+    () => new Map(destinations.map((destination) => [destination.id, destination])),
+    [destinations]
+  );
+  useEffect(() => {
+    const timer = setTimeout(() => setHasLoadingDelay(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadDestinations = async () => {
+      try {
+        if (!cancelled) setIsLoadingDestinations(true);
+        const data = await plansBackend.getDestinations();
+        if (!cancelled) setDestinations(data);
+      } catch {
+        if (!cancelled) setDestinations(await plansBackend.getDestinations());
+      } finally {
+        if (!cancelled) setIsLoadingDestinations(false);
+      }
+    };
+
+    loadDestinations();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadTrips = async () => {
+      try {
+        setIsLoadingPlans(true);
+        setPlansError("");
+        const readyPlans = await plansBackend.getTrips();
+
+        if (!cancelled) {
+          setPlans(readyPlans);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setPlans([]);
+          setPlansError(error?.message || "Error retrieving.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingPlans(false);
+        }
+      }
+    };
+
+    loadTrips();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const contextDest = destId ? destinationMap.get(destId) : null;
+
+  // Filter plans to only those that mention the selected destination (either in
+  // the plan.destinations array or in the trip details' placeIds if available).
+  const filteredPlans = useMemo(() => {
+    if (!destId) return plans;
+    return plans.filter((plan) => {
+      if (Array.isArray(plan.destinations) && plan.destinations.includes(destId)) return true;
+      const details = tripDetailsById[plan.tripId];
+      if (details && Array.isArray(details.placeIds) && details.placeIds.includes(destId)) return true;
+      return false;
+    });
+  }, [destId, plans, tripDetailsById]);
+
+  const autoSelectedPlanId = useMemo(() => {
+    if (!destId) return null;
+    const matchingPlan = filteredPlans.find((plan) => plan.destinations.includes(destId) || (Array.isArray(tripDetailsById[plan.tripId]?.placeIds) && tripDetailsById[plan.tripId].placeIds.includes(destId)));
+    return matchingPlan ? matchingPlan.id : null;
+  }, [destId, filteredPlans, tripDetailsById]);
+
+  const activePlanId = selectedPlanId || autoSelectedPlanId;
+  const activePlan = plans.find((plan) => plan.id === activePlanId) || null;
+  const isPlansLoading = isLoadingPlans || isLoadingDestinations || hasLoadingDelay;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadTripDetails = async () => {
+      if (!activePlan || !Number.isFinite(Number(activePlan.tripId))) return;
+      const tripId = Number(activePlan.tripId);
+      if (tripDetailsById[tripId]) return;
+
+      try {
+        const payload = await plansBackend.getTripById(tripId);
+        if (!payload || cancelled) return;
+        setTripDetailsById((prev) => ({ ...prev, [tripId]: payload }));
+      } catch {
+        // Keep existing plan data when details endpoint fails.
+      }
+    };
+
+    loadTripDetails();
+    return () => {
+      cancelled = true;
+    };
+  }, [activePlan, tripDetailsById]);
+
+  const handleSubmit = async () => {
+    if (!activePlanId) {
+      alert(t("validation.selectPlanFirst"));
+      return;
+    }
+
+    if (!hasValidBookingDetails) {
+      alert(t("validation.fillAllFields"));
+      return;
+    }
+    
+    const selectedPlan = plans.find((plan) => plan.id === activePlanId);
+    if (!selectedPlan) {
+      alert(t("validation.selectPlanFirst"));
+      return;
+    }
+    const startDate = parseBookingDateTime(bookingDate, startTime);
+    if (!startDate) {
+      alert(t("validation.fillAllFields"));
+      return;
+    }
+    const endDate = new Date(startDate);
+    endDate.setHours(endDate.getHours() + parsedDurationHours);
+
+    const selectedTripDetails = tripDetailsById[selectedPlan.tripId];
+    const selectedDestinations = Array.isArray(selectedTripDetails?.placeIds)
+      ? selectedTripDetails.placeIds
+      : selectedPlan.destinations;
+    const planData = {
+      planId: activePlanId,
+      tripId: selectedPlan.tripId,
+      title: selectedPlan.title[language] || selectedPlan.title.en,
+      destinationIds: selectedDestinations,
+      date: bookingDate,
+      duration: `${parsedDurationHours}h`,
+      startTime
+    };
+    
+    localStorage.setItem("current_booking_plan", JSON.stringify(planData));
+    localStorage.setItem(
+      "user_booking_info",
+      JSON.stringify({
+        ...bookingInfo,
+        startTime,
+        durationHours: parsedDurationHours,
+      })
+    );
+    setIsSubmittingBooking(true);
+    try {
+      const bookingResponse = await plansBackend.createBooking({
+        planId: selectedPlan.tripId,
+        guideId: null,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        numberOfPeople: Number(bookingInfo.numberOfPeople || 1),
+        paymentMethod: mapPaymentMethod(bookingInfo.paymentMethod),
+        usePoints: false,
+      });
+      const bookingId = extractBookingId(bookingResponse);
+      if (bookingId) {
+        localStorage.setItem("current_booking_id", String(bookingId));
+        if (mapPaymentMethod(bookingInfo.paymentMethod) === "Visa") {
+          await plansBackend.payBooking({ bookingId });
+        }
+      }
+      setBookingStatus({
+        isOpen: true,
+        isSuccess: true,
+        message: t("booking.confirmedTitle") || "Booking confirmed.",
+      });
+    } catch (error) {
+      setBookingStatus({
+        isOpen: true,
+        isSuccess: false,
+        message: error?.message || "Booking failed. Please try again.",
+      });
+    } finally {
+      setIsSubmittingBooking(false);
+    }
+  };
+
+  const handleDeletePlan = async (event, plan) => {
+    event.stopPropagation();
+    if (deletingPlanId === plan.id) return;
+    const confirmed = window.confirm("Delete this trip?");
+    if (!confirmed) return;
+
+    setDeletingPlanId(plan.id);
+    try {
+      await plansBackend.deleteTrip(plan.tripId);
+      setPlans((prev) => prev.filter((item) => item.id !== plan.id));
+      setTripDetailsById((prev) => {
+        if (!(plan.tripId in prev)) return prev;
+        const next = { ...prev };
+        delete next[plan.tripId];
+        return next;
+      });
+      setSelectedPlanId((prev) => (prev === plan.id ? null : prev));
+    } catch {
+      alert("Failed to delete trip.");
+    } finally {
+      setDeletingPlanId(null);
+    }
+  };
+
+  const closeBookingStatus = () => {
+    const shouldNavigate = bookingStatus.isSuccess;
+    setBookingStatus({ isOpen: false, isSuccess: false, message: "" });
+    if (shouldNavigate) navigate("/tourist/home");
+  };
+
+  return (
+    <div className="min-h-screen bg-[#ead9c5] px-4 py-5 text-black font-sans pb-20" dir={isRTL ? "rtl" : "ltr"}>
+      <PlansHeader
+        isRTL={isRTL}
+        navigate={navigate}
+        title={t("plans.title")}
+        createLabel={t("createPlan.title")}
+      />
+
+      <RecommendedDestinationBanner destination={contextDest} language={language} isRTL={isRTL} t={t} />
+
+      <main className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-16 px-2">
+        <PlansGrid
+          plans={filteredPlans}
+          destId={destId}
+          navigate={navigate}
+          isLoading={isPlansLoading}
+          plansError={plansError}
+          activePlanId={activePlanId}
+          tripDetailsById={tripDetailsById}
+          destinationMap={destinationMap}
+          deletingPlanId={deletingPlanId}
+          isRTL={isRTL}
+          language={language}
+          t={t}
+          onSelectPlan={setSelectedPlanId}
+          onDeletePlan={handleDeletePlan}
+        />
+      </main>
+
+      <BookingSettings
+        bookingDate={bookingDate}
+        durationHours={durationHours}
+        startTime={startTime}
+        isSubmittingBooking={isSubmittingBooking}
+        hasValidBookingDetails={hasValidBookingDetails}
+        destId={destId}
+        navigate={navigate}
+        t={t}
+        onDurationChange={setDurationHours}
+        onStartTimeChange={setStartTime}
+        onSubmit={handleSubmit}
+      />
+
+      <BookingStatusModal bookingStatus={bookingStatus} t={t} onClose={closeBookingStatus} />
+    </div>
+  );
+}
