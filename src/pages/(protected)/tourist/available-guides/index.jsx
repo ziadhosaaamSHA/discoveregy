@@ -121,7 +121,12 @@ export default function AvailableGuides() {
       date: dateObj,
       conversationId: conversationId ?? `conv-${guide.id}`
     });
-    
+    // Persist the selected guide so other flows (e.g., booking from Plans) can use it
+    try {
+      localStorage.setItem("selected_guide", JSON.stringify(guide));
+    } catch (e) {
+      // ignore storage errors
+    }
     localStorage.setItem("upcoming_trips", JSON.stringify(upcomingTrips));
 
     const bookingInfo = JSON.parse(localStorage.getItem("user_booking_info") || "{}");

@@ -19,7 +19,6 @@ const cardVariants = {
 
 export default function Explore() {
   const { t, language, isRTL } = useLanguage();
-  const baseUrl = "https://tourism-api-sha-e7g5guagcdc2dddv.westeurope-01.azurewebsites.net"
   const [destinations, setDestinations] = useState(() => getFallbackDestinations());
 
   useEffect(() => {
@@ -89,7 +88,7 @@ export default function Explore() {
                 <Link to={`/destination/${dest.id}`} className="block">
                   <div className="relative h-64 overflow-hidden">
                     <img
-                      src={baseUrl + dest.image}
+                      src={resolveApiAssetUrl(dest.image)}
                       alt={`${data.name} destination`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"

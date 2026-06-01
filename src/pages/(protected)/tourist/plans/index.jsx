@@ -132,6 +132,18 @@ export default function Plans() {
   const activePlanId = selectedPlanId || autoSelectedPlanId;
   const activePlan = plans.find((plan) => plan.id === activePlanId) || null;
   const isPlansLoading = isLoadingPlans || isLoadingDestinations || hasLoadingDelay;
+  const [showOtherTrips, setShowOtherTrips] = useState(false);
+
+  // Plans that do NOT reference the selected destination
+  const otherPlans = useMemo(() => {
+    if (!destId) return [];
+    return plans.filter((plan) => {
+      if (Array.isArray(plan.destinations) && plan.destinations.includes(destId)) return false;
+      const details = tripDetailsById[plan.tripId];
+      if (details && Array.isArray(details.placeIds) && details.placeIds.includes(destId)) return false;
+      return true;
+    });
+  }, [destId, plans, tripDetailsById]);
 
   useEffect(() => {
     let cancelled = false;
@@ -207,7 +219,14 @@ export default function Plans() {
     try {
       const bookingResponse = await plansBackend.createBooking({
         planId: selectedPlan.tripId,
-        guideId: null,
+        guideId: (() => {
+          try {
+            const stored = JSON.parse(localStorage.getItem("selected_guide") || "null");
+            return stored && stored.id ? stored.id : null;
+          } catch {
+            return null;
+          }
+        })(),
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         numberOfPeople: Number(bookingInfo.numberOfPeople || 1),
@@ -277,8 +296,19 @@ export default function Plans() {
       />
 
       <RecommendedDestinationBanner destination={contextDest} language={language} isRTL={isRTL} t={t} />
+      <div className="max-w-6xl mx-auto px-2">
+        <div className="flex items-center justify-end mb-4">
+          <button
+            type="button"
+            onClick={() => setShowOtherTrips((s) => !s)}
+            className="inline-flex items-center gap-2 rounded-md bg-white/90 px-3 py-1.5 text-sm font-medium text-primary shadow-sm hover:bg-white"
+            aria-pressed={showOtherTrips}
+          >
+            {showOtherTrips ? (t("plans.hideOtherTrips") || (language === "ar" ? "إخفاء الرحلات الأخرى" : "Hide other trips")) : (t("plans.showOtherTrips") || (language === "ar" ? "عرض رحلات أخرى" : "Show other trips"))}
+          </button>
+        </div>
 
-      <main className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-16 px-2">
+        <main className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-16">
         <PlansGrid
           plans={filteredPlans}
           destId={destId}
@@ -295,7 +325,32 @@ export default function Plans() {
           onSelectPlan={setSelectedPlanId}
           onDeletePlan={handleDeletePlan}
         />
-      </main>
+        </main>
+
+        {showOtherTrips && (
+          <section className="mt-8">
+            <h3 className="mb-4 text-lg font-semibold">{t("plans.otherTripsTitle") || (language === "ar" ? "رحلات أخرى" : "Other trips")}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <PlansGrid
+                plans={otherPlans}
+                destId={null}
+                navigate={navigate}
+                isLoading={isPlansLoading}
+                plansError={plansError}
+                activePlanId={activePlanId}
+                tripDetailsById={tripDetailsById}
+                destinationMap={destinationMap}
+                deletingPlanId={deletingPlanId}
+                isRTL={isRTL}
+                language={language}
+                t={t}
+                onSelectPlan={setSelectedPlanId}
+                onDeletePlan={handleDeletePlan}
+              />
+            </div>
+          </section>
+        )}
+      </div>
 
       <BookingSettings
         bookingDate={bookingDate}
