@@ -6,6 +6,7 @@ import { tourismApi } from "../../../../services/tourism-api";
 import { upsertStoredConversation } from "../../../../services/conversations-store";
 import {
   addUpcomingTrip,
+  clearBookingSession,
   readBookingInfo,
   readCurrentBookingId,
   readCurrentBookingPlan,
@@ -164,6 +165,11 @@ export default function AvailableGuides() {
     navigate(`/chats/${conversationId ?? `conv-${guide.id}`}`);
   };
 
+  const handleSuccessClose = () => {
+    clearBookingSession();
+    navigate("/tourist/home");
+  };
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F2E0CA" }}>
 
@@ -203,7 +209,7 @@ export default function AvailableGuides() {
 
       <Modal 
         isOpen={isSuccessModalOpen} 
-        onClose={() => navigate("/tourist/home")}
+        onClose={handleSuccessClose}
         title={t("availableGuides.successTitle")}
       >
         <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -213,7 +219,7 @@ export default function AvailableGuides() {
           {t("availableGuides.successBody", { name: selectedGuide?.name[language] || selectedGuide?.name.en })}
         </p>
         <button
-          onClick={() => navigate("/tourist/home")}
+          onClick={handleSuccessClose}
           className="w-full py-5 bg-[#e67e22] text-white text-xl font-black rounded-3xl shadow-lg hover:brightness-110 active:scale-95 transition-all"
         >
           {t("availableGuides.goTrips")}

@@ -17,6 +17,7 @@ const BookingForm = lazy(() => import("../pages/(protected)/tourist/pay"));
 const Plans = lazy(() => import("../pages/(protected)/tourist/plans"));
 const CreatePlan = lazy(() => import("../pages/(protected)/tourist/create-plan"));
 const AvailableGuides = lazy(() => import("../pages/(protected)/tourist/available-guides"));
+const MyTrips = lazy(() => import("../pages/(protected)/tourist/my-trips"));
 const Requests = lazy(() => import("../pages/(protected)/guide/requests"));
 const Chats = lazy(() => import("../pages/(protected)/shared/chats"));
 const Profile = lazy(() => import("../pages/(protected)/shared/profile"));
@@ -52,6 +53,7 @@ export function AppRoutes() {
             <Route path="plans" element={<Plans />} />
             <Route path="create-plan" element={<CreatePlan />} />
             <Route path="available-guides" element={<AvailableGuides />} />
+            <Route path="my-trips" element={<MyTrips />} />
           </Route>
           <Route element={<TouristLayout />}>
             <Route path="/available-guides" element={<AvailableGuides />} />

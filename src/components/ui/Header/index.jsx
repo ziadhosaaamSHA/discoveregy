@@ -97,15 +97,21 @@ export default function Header() {
     ? [
         { label: t("common.home"), href: roleHome, icon: MapPin },
         { label: t("requests.title"), href: "/requests", icon: MapPin },
-        { label: t("common.aboutUs"), href: "/#about-us", icon: Info },
       ]
     : user?.type === "admin"
       ? [
           { label: "Dashboard", href: "/admin", icon: MapPin },
           { label: t("common.aboutUs"), href: "/#about-us", icon: Info },
         ]
-      : [
-        ];
+      : user?.type === "tourist"
+        ? [
+            { label: t("common.home"), href: roleHome, icon: MapPin },
+            { label: t("myTrips.title") || (language === "ar" ? "رحلاتي" : "My Trips"), href: "/tourist/my-trips", icon: MapPin },
+          ]
+        : [
+            { label: t("common.home"), href: "/", icon: MapPin },
+            { label: t("common.aboutUs"), href: "/#about-us", icon: Info },
+          ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -230,7 +236,7 @@ export default function Header() {
       >
         <div className="max-w-[1200px] mx-auto px-6 h-full flex items-center justify-between">
           {/* Logo */}
-          <Link to={roleHome} aria-label="Discover Egypt Home">
+          <Link to="/" aria-label="Discover Egypt Home">
             <img
               src="/images/DiscoverEgyptLogo.png"
               alt="Discover Egypt"

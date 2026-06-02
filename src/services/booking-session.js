@@ -76,6 +76,13 @@ export function clearSelectedGuide() {
   localStorage.removeItem(SELECTED_GUIDE_KEY);
 }
 
+export function clearBookingSession() {
+  localStorage.removeItem(BOOKING_INFO_KEY);
+  localStorage.removeItem(CURRENT_BOOKING_PLAN_KEY);
+  localStorage.removeItem(CURRENT_BOOKING_ID_KEY);
+  localStorage.removeItem(SELECTED_GUIDE_KEY);
+}
+
 export function readUpcomingTrips() {
   const trips = readJson(UPCOMING_TRIPS_KEY, []);
   return Array.isArray(trips) ? trips : [];

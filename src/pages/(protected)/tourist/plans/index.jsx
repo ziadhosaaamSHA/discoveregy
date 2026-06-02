@@ -9,6 +9,7 @@ import { PlansHeader } from "./components/PlansHeader";
 import { RecommendedDestinationBanner } from "./components/RecommendedDestinationBanner";
 import { Modal, PaymentConfirmationModal } from "../../../../components/ui";
 import {
+  clearBookingSession,
   mergeBookingInfo,
   saveCurrentBookingId,
   saveCurrentBookingPlan,
@@ -43,7 +44,6 @@ export default function Plans() {
   const [deleteError, setDeleteError] = useState("");
   const [isLoadingDestinations, setIsLoadingDestinations] = useState(true);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
-  const [hasLoadingDelay, setHasLoadingDelay] = useState(true);
   const [plansError, setPlansError] = useState("");
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
   const [bookingStatus, setBookingStatus] = useState({ isOpen: false, isSuccess: false, message: "" });
@@ -61,57 +61,39 @@ export default function Plans() {
     () => new Map(destinations.map((destination) => [destination.id, destination])),
     [destinations]
   );
-  useEffect(() => {
-    const timer = setTimeout(() => setHasLoadingDelay(false), 500);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
-    const loadDestinations = async () => {
+    const loadInitialData = async () => {
       try {
-        if (!cancelled) setIsLoadingDestinations(true);
-        const data = await plansBackend.getDestinations();
-        if (!cancelled) setDestinations(data);
-      } catch {
-        if (!cancelled) setDestinations(await plansBackend.getDestinations());
-      } finally {
-        if (!cancelled) setIsLoadingDestinations(false);
-      }
-    };
-
-    loadDestinations();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadTrips = async () => {
-      try {
+        setIsLoadingDestinations(true);
         setIsLoadingPlans(true);
         setPlansError("");
-        const readyPlans = await plansBackend.getTrips();
+
+        const [destData, tripData] = await Promise.all([
+          plansBackend.getDestinations(),
+          plansBackend.getTrips(),
+        ]);
 
         if (!cancelled) {
-          setPlans(readyPlans);
+          setDestinations(destData);
+          setPlans(tripData);
         }
       } catch (error) {
         if (!cancelled) {
           setPlans([]);
-          setPlansError(error?.message || "Error retrieving.");
+          setPlansError(error?.message || "Error retrieving trips.");
         }
       } finally {
         if (!cancelled) {
+          setIsLoadingDestinations(false);
           setIsLoadingPlans(false);
         }
       }
     };
 
-    loadTrips();
+    loadInitialData();
     return () => {
       cancelled = true;
     };
@@ -132,14 +114,13 @@ export default function Plans() {
   }, [destId, plans, tripDetailsById]);
 
   const autoSelectedPlanId = useMemo(() => {
-    if (!destId) return null;
-    const matchingPlan = filteredPlans.find((plan) => plan.destinations.includes(destId) || (Array.isArray(tripDetailsById[plan.tripId]?.placeIds) && tripDetailsById[plan.tripId].placeIds.includes(destId)));
-    return matchingPlan ? matchingPlan.id : null;
-  }, [destId, filteredPlans, tripDetailsById]);
+    if (!destId || filteredPlans.length === 0) return null;
+    return filteredPlans[0].id;
+  }, [destId, filteredPlans]);
 
   const activePlanId = selectedPlanId || autoSelectedPlanId;
-  const activePlan = plans.find((plan) => plan.id === activePlanId) || null;
-  const isPlansLoading = isLoadingPlans || isLoadingDestinations || hasLoadingDelay;
+  const activePlan = useMemo(() => plans.find((plan) => plan.id === activePlanId) || null, [plans, activePlanId]);
+  const isPlansLoading = isLoadingPlans || isLoadingDestinations;
   const [activeTab, setActiveTab] = useState("matching"); // "matching" | "all"
 
   const displayedPlans = useMemo(() => {
@@ -171,7 +152,7 @@ export default function Plans() {
   }, [activePlan, tripDetailsById]);
 
   const buildBookingDraft = () => {
-    if (!activePlanId) {
+    if (!activePlan) {
       alert(t("validation.selectPlanFirst"));
       return null;
     }
@@ -181,11 +162,6 @@ export default function Plans() {
       return null;
     }
     
-    const selectedPlan = plans.find((plan) => plan.id === activePlanId);
-    if (!selectedPlan) {
-      alert(t("validation.selectPlanFirst"));
-      return null;
-    }
     const startDate = parseBookingDateTime(bookingDate, startTime);
     if (!startDate) {
       alert(t("validation.fillAllFields"));
@@ -194,24 +170,24 @@ export default function Plans() {
     const endDate = new Date(startDate);
     endDate.setHours(endDate.getHours() + parsedDurationHours);
 
-    const selectedTripDetails = tripDetailsById[selectedPlan.tripId];
+    const selectedTripDetails = tripDetailsById[activePlan.tripId];
     const selectedDestinations = Array.isArray(selectedTripDetails?.placeIds)
       ? selectedTripDetails.placeIds
-      : selectedPlan.destinations;
+      : activePlan.destinations;
     const planData = {
       planId: activePlanId,
-      tripId: selectedPlan.tripId,
-      title: selectedPlan.title[language] || selectedPlan.title.en,
+      tripId: activePlan.tripId,
+      title: activePlan.title[language] || activePlan.title.en,
       destinationIds: selectedDestinations,
       date: bookingDate,
       duration: `${parsedDurationHours}h`,
       startTime,
-      amount: selectedPlan.price,
-      guideId: selectedPlan.guideId,
-      guideName: selectedPlan.guideName,
+      amount: activePlan.price,
+      guideId: activePlan.guideId,
+      guideName: activePlan.guideName,
     };
 
-    return { selectedPlan, startDate, endDate, planData };
+    return { selectedPlan: activePlan, startDate, endDate, planData };
   };
 
   const handleSubmit = () => {
@@ -271,6 +247,17 @@ export default function Plans() {
     setPlanToDelete(plan);
   };
 
+  const removePlanFromUI = (plan) => {
+    setPlans((prev) => prev.filter((item) => item.id !== plan.id));
+    setTripDetailsById((prev) => {
+      if (!(plan.tripId in prev)) return prev;
+      const next = { ...prev };
+      delete next[plan.tripId];
+      return next;
+    });
+    setSelectedPlanId((prev) => (prev === plan.id ? null : prev));
+  };
+
   const confirmDeletePlan = async () => {
     if (!planToDelete) return;
     const plan = planToDelete;
@@ -280,16 +267,7 @@ export default function Plans() {
 
     try {
       await plansBackend.deleteTrip(plan.tripId);
-
-      // Remove from UI
-      setPlans((prev) => prev.filter((item) => item.id !== plan.id));
-      setTripDetailsById((prev) => {
-        if (!(plan.tripId in prev)) return prev;
-        const next = { ...prev };
-        delete next[plan.tripId];
-        return next;
-      });
-      setSelectedPlanId((prev) => (prev === plan.id ? null : prev));
+      removePlanFromUI(plan);
     } catch (err) {
       // If deletion failed, double-check whether the trip still exists on the server.
       // Some backends may return an error even when the resource was removed.
@@ -297,14 +275,7 @@ export default function Plans() {
         const check = await plansBackend.getTripById(plan.tripId);
         if (!check) {
           // Trip appears removed despite the error — treat as success.
-          setPlans((prev) => prev.filter((item) => item.id !== plan.id));
-          setTripDetailsById((prev) => {
-            if (!(plan.tripId in prev)) return prev;
-            const next = { ...prev };
-            delete next[plan.tripId];
-            return next;
-          });
-          setSelectedPlanId((prev) => (prev === plan.id ? null : prev));
+          removePlanFromUI(plan);
         } else {
           // Still exists — surface an error to the user via the modal
           setDeleteError(err?.message || "Failed to delete trip. Please try again.");
@@ -319,6 +290,9 @@ export default function Plans() {
 
   const closeBookingStatus = () => {
     const shouldNavigate = bookingStatus.isSuccess;
+    if (shouldNavigate) {
+      clearBookingSession();
+    }
     setBookingStatus({ isOpen: false, isSuccess: false, message: "" });
     if (shouldNavigate) navigate("/tourist/home");
   };

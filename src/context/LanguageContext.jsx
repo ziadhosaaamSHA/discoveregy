@@ -36,7 +36,9 @@ const TRANSLATIONS = {
       signoutConfirmBody: "Are you sure you want to sign out of your account?",
       points: "Points",
       notifications: "Notifications",
-      loading: "Loading...",
+    },
+    myTrips: {
+      title: "My Trips",
     },
     tourist: {
       home: {
@@ -411,7 +413,6 @@ const TRANSLATIONS = {
       signoutConfirmBody: "هل أنت متأكد أنك تريد تسجيل الخروج من حسابك؟",
       points: "النقاط",
       notifications: "الإشعارات",
-      loading: "جارٍ التحميل...",
     },
     hero: {
       badge: "أفضل الوجهات حول مصر",
@@ -562,6 +563,9 @@ const TRANSLATIONS = {
         title: "الإشعارات",
         description: "تحقق من الحجوزات الجديدة، والحساب، والتحديثات النظامية.",
       },
+    },
+    myTrips: {
+      title: "رحلاتي",
     },
     tourist: {
       home: {
