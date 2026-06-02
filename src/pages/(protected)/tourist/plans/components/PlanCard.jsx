@@ -1,6 +1,7 @@
 import { CheckCircle2, MapPin, Trash2, Wallet } from "lucide-react";
 import { resolveApiAssetUrl } from "@/services/api-client";
 import { formatAmount } from "./planUtils";
+import { IconButton } from "../../../../../components/ui";
 
 
 function DestinationPreview({ destinationMap, destinationIds }) {
@@ -82,18 +83,17 @@ export function PlanCard({
           <CheckCircle2 size={32} />
         </div>
         {String(plan.id).startsWith("custom-") && (
-          <button
+          <IconButton
+            label={t("plans.deleteTrip") || "Delete trip"}
             type="button"
             onClick={(event) => onDelete(event, plan)}
             disabled={deletingPlanId === plan.id}
             className={`absolute top-6 ${isRTL ? "right-6" : "left-6"} w-10 h-10 rounded-full flex items-center justify-center transition ${
               deletingPlanId === plan.id ? "bg-red-900/80 cursor-not-allowed" : "bg-red-600/80 hover:bg-red-700"
             }`}
-            aria-label="Delete trip"
-            title="Delete trip"
           >
             <Trash2 size={18} className="text-white" />
-          </button>
+          </IconButton>
         )}
 
         <div className={`absolute bottom-6 ${isRTL ? "right-8 text-right" : "left-8 text-left"}`}>

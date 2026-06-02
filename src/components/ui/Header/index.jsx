@@ -23,6 +23,7 @@ import { useBookmarks } from "../../../context/BookmarksContext";
 import { useLanguage } from "../../../context/LanguageContext";
 import { tourismApi } from "../../../services/tourism-api";
 import { ConfirmModal } from "..";
+import { normalizeNotifications } from "../../../services/mappers/notification.mapper";
 
 const overlayVariants = {
   hidden: { opacity: 0 },
@@ -49,21 +50,6 @@ const itemVariants = (isRTL) => ({
   hidden: { opacity: 0, x: isRTL ? -30 : 30 },
   visible: { opacity: 1, x: 0, transition: { type: "spring", damping: 20 } },
 });
-
-function extractArray(payload) {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.items)) return payload.items;
-  if (Array.isArray(payload?.data)) return payload.data;
-  return [];
-}
-
-function isUnreadNotification(notification) {
-  if (!notification || typeof notification !== "object") return false;
-  if (typeof notification.isRead === "boolean") return !notification.isRead;
-  if (typeof notification.read === "boolean") return !notification.read;
-  if (typeof notification.status === "string") return notification.status.toLowerCase() !== "read";
-  return false;
-}
 
 function getDisplayName(user) {
   const name = String(user?.name || "").trim();
@@ -179,14 +165,10 @@ export default function Header() {
 
       try {
         const response = await tourismApi.getNotifications();
-        const notifications = extractArray(response);
-        const unread = notifications.filter(isUnreadNotification);
-        const unreadIds = unread
-          .map((item) => Number(item?.id ?? item?.notificationId))
-          .filter((id) => Number.isFinite(id));
+        const unread = normalizeNotifications(response).filter((notification) => !notification.isRead);
 
         if (!cancelled) {
-          setChatCount(unreadIds.length);
+          setChatCount(unread.length);
         }
       } catch {
         if (!cancelled) {

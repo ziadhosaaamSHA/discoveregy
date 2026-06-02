@@ -1,5 +1,6 @@
 import { TIME_OPTIONS } from "./planUtils";
 import { Calendar, Clock, Hourglass, Edit3 } from "lucide-react";
+import { Button, IconButton } from "../../../../../components/ui";
 
 // BookingSettings lets tourists review date and adjust duration/start time before submit.
 export function BookingSettings({
@@ -84,14 +85,14 @@ export function BookingSettings({
             </div>
           </div>
 
-          <button
+          <IconButton
+            label={t("createPlan.editInPay")}
             type="button"
             onClick={() => navigate(destId ? `/tourist/pay?destId=${destId}` : "/tourist/pay")}
             className="p-3 rounded-2xl bg-[#5d4037]/10 text-[#5d4037] hover:bg-[#5d4037]/20 transition-all"
-            title={t("createPlan.editInPay")}
           >
             <Edit3 size={18} />
-          </button>
+          </IconButton>
         </div>
 
         {/* Right side: Submission Button */}
@@ -101,13 +102,14 @@ export function BookingSettings({
               {t("createPlan.invalidBookingDetails") || "Please complete details."}
             </span>
           )}
-          <button
+          <Button
+            type="button"
             onClick={onSubmit}
             disabled={isSubmittingBooking || !hasValidBookingDetails || !activePlan}
-            className="flex-1 md:flex-none bg-[#e67e22] text-white px-8 py-3.5 rounded-2xl font-black shadow-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+            className="flex-1 md:flex-none px-8 py-3.5 whitespace-nowrap"
           >
             {isSubmittingBooking ? (t("common.loading") || "Loading...") : (t("createPlan.submit") || "Book Now")}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

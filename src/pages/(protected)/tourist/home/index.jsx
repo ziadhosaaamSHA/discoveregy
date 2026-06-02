@@ -1,133 +1,31 @@
-import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Star, MessageCircle, X } from "lucide-react";
 import { useLanguage } from "../../../../context/LanguageContext";
 import { useAuth } from "../../../../context/AuthContext";
-import { Modal } from "../../../../components/ui";
-import * as homeBackend from "./backend/homeBackend";
+import { Button, Modal } from "../../../../components/ui";
 import UpcomingTrips from "./components/UpcomingTrips";
 import ActivitiesSection from "./components/ActivitiesSection";
 import PopularSection from "./components/PopularSection";
-import { ACTIVITY_IDS, POPULAR_IDS } from "./components/homeCards";
+import { useTouristHome } from "./hooks/useTouristHome";
 
 // TouristHome is the tourist dashboard with trips, activities, and destinations.
 export default function TouristHome() {
   const navigate = useNavigate();
   const { isRTL, t, language } = useLanguage();
   const { user } = useAuth();
-  const [destinations, setDestinations] = useState([]);
-  const [isLoadingDestinations, setIsLoadingDestinations] = useState(true);
-  const [upcomingTrips, setUpcomingTrips] = useState([]);
-  const [isLoadingUpcomingTrips, setIsLoadingUpcomingTrips] = useState(true);
-  const [cancellingTripId, setCancellingTripId] = useState(null);
-  const [tripToCancel, setTripToCancel] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const loadDestinations = async () => {
-      try {
-        if (!cancelled) setIsLoadingDestinations(true);
-        const data = await homeBackend.getDestinations();
-        if (!cancelled) setDestinations(data);
-      } catch {
-        if (!cancelled) setDestinations([]);
-      } finally {
-        if (!cancelled) setIsLoadingDestinations(false);
-      }
-    };
-
-    loadDestinations();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  
-  useEffect(() => {
-    let cancelled = false;
-    
-    const loadBookings = async () => {
-      if (!user) {
-        if (!cancelled) {
-          setUpcomingTrips([]);
-          setIsLoadingUpcomingTrips(false);
-        }
-        return;
-      }
-      try {
-        if (!cancelled) setIsLoadingUpcomingTrips(true);
-        const mapped = await homeBackend.getUpcomingTrips(user);
-        if (!cancelled) setUpcomingTrips(mapped);
-      } catch {
-        if (!cancelled) setUpcomingTrips([]);
-      } finally {
-        if (!cancelled) setIsLoadingUpcomingTrips(false);
-      }
-    };
-    
-    loadBookings();
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
-  
-  const activityDestinations = useMemo(
-    () => destinations.filter((d) => ACTIVITY_IDS.includes(d.id)),
-    [destinations]
-  );
-  const popularDestinations = useMemo(
-    () => destinations.filter((d) => POPULAR_IDS.includes(d.id)),
-    [destinations]
-  );
-  
-  const handleChat = async (trip) => {
-    if (trip.conversationId) {
-      navigate(`/chats/${trip.conversationId}`);
-      return;
-    }
-    if (trip.guideId) {
-      try {
-        const conversationId = await homeBackend.getOrCreateConversation(trip.guideId);
-        if (conversationId) {
-          navigate(`/chats/${conversationId}`);
-        } else {
-          navigate(`/chats/conv-${trip.guideId}`);
-        }
-      } catch (err) {
-        console.error("Failed to navigate/create conversation:", err);
-        navigate(`/chats/conv-${trip.guideId}`);
-      }
-    }
-  };
-
-  const handleCancelTrip = async (trip) => {
-    if (!trip?.id || cancellingTripId === trip.id) return;
-    setCancellingTripId(trip.id);
-    
-    try {
-      await homeBackend.cancelTrip(trip);
-      
-      setUpcomingTrips((prev) => prev.filter((item) => item.id !== trip.id));
-    } catch {
-      alert(t("destination.cancelTripFailed"));
-    } finally {
-      setCancellingTripId(null);
-    }
-  };
-  
-  const requestCancelTrip = (trip) => {
-    if (!trip?.id || cancellingTripId === trip.id) return;
-    setTripToCancel(trip);
-  };
-  
-  const confirmCancelTrip = async () => {
-    if (!tripToCancel) return;
-    const target = tripToCancel;
-    setTripToCancel(null);
-    await handleCancelTrip(target);
-  };
-  
-  const isHomeContentLoading = isLoadingDestinations || isLoadingUpcomingTrips;
+  const {
+    activityDestinations,
+    popularDestinations,
+    upcomingTrips,
+    isLoadingUpcomingTrips,
+    isHomeContentLoading,
+    cancellingTripId,
+    tripToCancel,
+    openTripChat,
+    requestCancelTrip,
+    closeCancelTrip,
+    confirmCancelTrip,
+  } = useTouristHome({ user, navigate, t });
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F2E0CA" }}>
@@ -164,7 +62,7 @@ export default function TouristHome() {
           t={t}
           requestCancelTrip={requestCancelTrip}
           cancellingTripId={cancellingTripId}
-          onChat={handleChat}
+          onChat={openTripChat}
         />
 
         <ActivitiesSection activityDestinations={activityDestinations} isRTL={isRTL} t={t} />
@@ -176,7 +74,7 @@ export default function TouristHome() {
 
       <Modal
         isOpen={!!tripToCancel}
-        onClose={() => setTripToCancel(null)}
+        onClose={closeCancelTrip}
         title={t("destination.cancelTrip")}
         maxWidth="max-w-md"
       >
@@ -184,23 +82,23 @@ export default function TouristHome() {
           {t("tourist.home.cancelTripConfirm") || "Are you sure you want to cancel this trip?"}
         </p>
         <div className="flex items-center justify-center gap-3">
-          <button
+          <Button
             type="button"
-            onClick={() => setTripToCancel(null)}
-            className="px-6 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors"
+            onClick={closeCancelTrip}
+            variant="muted"
           >
             {t("common.close") || "Close"}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={confirmCancelTrip}
             disabled={!tripToCancel || cancellingTripId === tripToCancel.id}
-            className="px-6 py-3 rounded-2xl bg-[#d43e0b] text-white font-bold hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            variant="danger"
           >
             {cancellingTripId === tripToCancel?.id
               ? (t("common.loading") || "Loading...")
               : (t("destination.cancelTrip") || "Cancel Trip")}
-          </button>
+          </Button>
         </div>
       </Modal>
 

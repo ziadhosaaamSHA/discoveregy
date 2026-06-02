@@ -1,4 +1,3 @@
-import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -8,12 +7,10 @@ import {
   User,
   Wallet,
   Compass,
-  ChevronLeft,
   CheckCircle,
   HelpCircle,
 } from "lucide-react";
 import { useLanguage } from "../../../../context/LanguageContext";
-import * as myTripsBackend from "./backend/myTripsBackend";
 import { resolveApiAssetUrl } from "../../../../services/api-client";
 import { formatAmount } from "../../../../shared/utils/money";
 import {
@@ -21,123 +18,31 @@ import {
   LoadingState,
   EmptyState,
   Button,
+  IconButton,
+  PageBackButton,
+  SegmentedTabs,
 } from "../../../../components/ui";
-
-const INACTIVE_TRIP_STATUSES = new Set(["cancelled", "canceled", "rejected"]);
-
-function isInactiveTrip(trip) {
-  return INACTIVE_TRIP_STATUSES.has(String(trip?.status || "").toLowerCase());
-}
+import { isInactiveTrip, useMyTrips } from "./hooks/useMyTrips";
 
 export default function MyTrips() {
   const navigate = useNavigate();
   const { isRTL, language, t } = useLanguage();
-
-  const [trips, setTrips] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("all"); // "all" | "predefined" | "custom" | "cancelled"
-
-  // Cancellation States
-  const [tripToCancel, setTripToCancel] = useState(null);
-  const [isCancelling, setIsCancelling] = useState(false);
-  const [cancellationError, setCancellationError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadData = async () => {
-      setIsLoading(true);
-      setError("");
-      try {
-        const data = await myTripsBackend.loadMyTrips();
-        if (!cancelled) {
-          setTrips(data.bookings);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err?.message || "Failed to load bookings.");
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadData();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const handleMessageGuide = async (trip) => {
-    if (!trip.guideId) return;
-
-    if (trip.conversationId) {
-      navigate(`/chats/${trip.conversationId}`);
-      return;
-    }
-
-    try {
-      const cid = await myTripsBackend.getOrCreateConversation(trip.guideId);
-      if (cid) {
-        navigate(`/chats/${cid}`);
-      } else {
-        navigate("/chats");
-      }
-    } catch {
-      navigate("/chats");
-    }
-  };
-
-  const handleCancelClick = (event, trip) => {
-    event.stopPropagation();
-    setTripToCancel(trip);
-    setCancellationError("");
-    setSuccessMessage("");
-  };
-
-  const confirmCancellation = async () => {
-    if (!tripToCancel || isCancelling) return;
-    setIsCancelling(true);
-    setCancellationError("");
-
-    try {
-      await myTripsBackend.cancelTripBooking(
-        tripToCancel.id,
-        tripToCancel.amount,
-        tripToCancel.paymentMethod
-      );
-
-      // Reflect change in local state
-      setTrips((prev) =>
-        prev.map((t) => (t.id === tripToCancel.id ? { ...t, status: "cancelled" } : t))
-      );
-
-      setSuccessMessage(
-        language === "ar"
-          ? "تم إلغاء الرحلة بنجاح واسترداد المبلغ."
-          : "Trip booking cancelled and refunded successfully."
-      );
-      setTripToCancel(null);
-    } catch (err) {
-      setCancellationError(err?.message || "Failed to cancel booking. Please try again.");
-    } finally {
-      setIsCancelling(false);
-    }
-  };
-
-  const filteredTrips = useMemo(() => {
-    if (activeTab === "cancelled") {
-      return trips.filter(isInactiveTrip);
-    }
-
-    const activeTrips = trips.filter((trip) => !isInactiveTrip(trip));
-    if (activeTab === "all") return activeTrips;
-    return activeTrips.filter((trip) => trip.planType === activeTab);
-  }, [trips, activeTab]);
+  const {
+    activeTab,
+    setActiveTab,
+    filteredTrips,
+    isLoading,
+    error,
+    tripToCancel,
+    isCancelling,
+    cancellationError,
+    successMessage,
+    setSuccessMessage,
+    messageGuide,
+    requestCancellation,
+    closeCancellation,
+    confirmCancellation,
+  } = useMyTrips({ navigate, language });
 
   const tripTabs = [
     { id: "all", label: t("myTrips.tabs.all") || (language === "ar" ? "الرحلات النشطة" : "All Active") },
@@ -151,28 +56,19 @@ export default function MyTrips() {
       {/* Page Header */}
       <header className="max-w-6xl mx-auto px-2 mb-10 flex flex-col sm:flex-row items-center justify-between gap-6 pt-4">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="hover:opacity-75 transition-opacity" aria-label="Go Back">
-            {isRTL ? <ChevronLeft size={28} className="rotate-180" /> : <ChevronLeft size={28} />}
-          </button>
+          <PageBackButton onClick={() => navigate(-1)} className="bg-transparent shadow-none hover:bg-black/5" />
           <h1 className="text-3xl lg:text-4xl font-black tracking-tight">
             {t("myTrips.title") || (language === "ar" ? "رحلاتي المحجوزة" : "My Booked Trips")}
           </h1>
         </div>
 
         {/* Filters/Tabs */}
-        <div className="flex flex-wrap justify-center p-1 bg-black/5 rounded-full border border-black/5 self-center sm:self-auto">
-          {tripTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-full text-xs font-black transition-all duration-300 ${
-                activeTab === tab.id ? "bg-[#e67e22] text-white shadow-md" : "text-gray-700 hover:bg-black/5"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedTabs
+          tabs={tripTabs}
+          activeId={activeTab}
+          onChange={setActiveTab}
+          className="self-center sm:self-auto"
+        />
       </header>
 
       {/* Main Container */}
@@ -372,15 +268,14 @@ export default function MyTrips() {
                             <p className="font-bold text-sm text-gray-800 truncate">{trip.guideName}</p>
                           </div>
                           {!isCancelled && (
-                            <button
+                            <IconButton
+                              label={language === "ar" ? "مراسلة المرشد" : "Message Tour Guide"}
                               type="button"
-                              onClick={() => handleMessageGuide(trip)}
+                              onClick={() => messageGuide(trip)}
                               className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all ml-auto sm:ml-0"
-                              title={language === "ar" ? "مراسلة المرشد" : "Message Tour Guide"}
-                              aria-label="Message guide"
                             >
                               <MessageSquare size={16} />
-                            </button>
+                            </IconButton>
                           )}
                         </div>
                       ) : (
@@ -392,14 +287,15 @@ export default function MyTrips() {
 
                       {/* Cancel Booking Action */}
                       {!isCancelled && (
-                        <button
+                        <Button
                           type="button"
-                          onClick={(event) => handleCancelClick(event, trip)}
-                          className="w-full sm:w-auto px-4 py-2 border border-red-200 text-red-600 rounded-xl font-bold text-xs hover:bg-red-50 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                          onClick={(event) => requestCancellation(event, trip)}
+                          variant="outline"
+                          className="w-full sm:w-auto px-4 py-2 border-red-200 text-red-600 text-xs hover:bg-red-50"
                         >
                           <Trash2 size={14} />
                           <span>{language === "ar" ? "إلغاء الحجز" : "Cancel Trip"}</span>
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </motion.div>
@@ -423,12 +319,15 @@ export default function MyTrips() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold">{successMessage}</p>
             </div>
-            <button
+            <Button
+              type="button"
               onClick={() => setSuccessMessage("")}
-              className="text-white/80 hover:text-white font-bold text-xs"
+              variant="ghost"
+              size="sm"
+              className="text-white/80 hover:text-white hover:bg-white/10"
             >
               OK
-            </button>
+            </Button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -446,7 +345,7 @@ export default function MyTrips() {
         confirmLabel={language === "ar" ? "تأكيد الإلغاء" : "Yes, Cancel Booking"}
         error={cancellationError}
         isLoading={isCancelling}
-        onCancel={() => setTripToCancel(null)}
+        onCancel={closeCancellation}
         onConfirm={confirmCancellation}
       />
     </div>

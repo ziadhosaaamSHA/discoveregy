@@ -1,5 +1,6 @@
 import { X, Plus, Trash2, MapPin } from "lucide-react";
 import { formatAmount } from "../../../../../shared/utils/money";
+import { Button, IconButton } from "../../../../../components/ui";
 
 export default function EditPlan({
   selectedPlan,
@@ -35,24 +36,27 @@ export default function EditPlan({
           <h2 className="text-4xl font-black text-[#5d4037]">{selectedPlan.title}</h2>
           <p className="text-gray-600 font-medium mt-1">{t("createPlan.resultsFor", { query: selectedPlan.title })}</p>
         </div>
-        <button
+        <IconButton
+          label={t("common.close")}
           onClick={() => setIsEditMode(false)}
           className="bg-gray-200 p-3 rounded-full hover:bg-gray-300 transition-colors"
         >
           <X size={24} />
-        </button>
+        </IconButton>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
             <h4 className="text-xl font-bold uppercase tracking-widest text-[#5d4037]/50">{t("createPlan.selectedStops")}</h4>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
               onClick={() => setShowAddDestinations(true)}
               className="text-[#e67e22] font-black hover:underline flex items-center gap-2"
             >
               <Plus size={20} strokeWidth={3} /> {t("createPlan.addPlace")}
-            </button>
+            </Button>
           </div>
 
           <div className="max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-[#e67e22]/20 scrollbar-track-transparent">
@@ -67,12 +71,13 @@ export default function EditPlan({
                       <span className="block font-bold text-gray-800 truncate">{dest.copy[language]?.name || dest.copy.en.name}</span>
                       <span className="block text-xs font-black text-[#e67e22] mt-1">{formatAmount(dest.ticketPrice, language)}</span>
                     </div>
-                    <button
+                    <IconButton
+                      label={t("common.delete")}
                       onClick={() => handleRemoveDest(dest.id)}
                       className="text-red-500 hover:bg-red-50 p-2 rounded-xl transition-colors"
                     >
                       <Trash2 size={20} />
-                    </button>
+                    </IconButton>
                   </div>
                 </div>
               ))}
@@ -132,25 +137,30 @@ export default function EditPlan({
                 ))}
               </select>
             </div>
-            <button
+            <Button
               type="button"
               onClick={() => navigate("/tourist/pay")}
-              className="w-full px-5 py-3 rounded-2xl bg-[#5d4037] text-white font-bold hover:brightness-110 transition-all"
+              variant="secondary"
+              fullWidth
+              className="bg-[#5d4037]"
             >
               {t("createPlan.editInPay")}
-            </button>
+            </Button>
             {!hasValidBookingDetails && (
               <p className="text-sm font-bold text-red-700">{t("createPlan.missingDetails")}</p>
             )}
           </div>
 
-          <button
+          <Button
+            type="button"
             onClick={handleSubmit}
             disabled={isSubmittingPlan || !hasValidBookingDetails}
-            className="w-full bg-[#e67e22] text-white py-5 rounded-3xl text-2xl font-black shadow-xl hover:brightness-110 active:scale-95 transition-all mt-4"
+            fullWidth
+            size="lg"
+            className="py-5 rounded-3xl text-2xl mt-4"
           >
             {isSubmittingPlan ? (t("common.loading") || "Loading...") : t("createPlan.submit")}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -167,9 +177,9 @@ export default function EditPlan({
                 placeholder={t("createPlan.searchPlaceholder")}
                 className="text-2xl font-bold w-full outline-none"
               />
-              <button onClick={() => setShowAddDestinations(false)} className="p-2 hover:bg-gray-100 rounded-full">
+              <IconButton label={t("common.close")} onClick={() => setShowAddDestinations(false)} className="p-2 hover:bg-gray-100 rounded-full">
                 <X size={32} />
-              </button>
+              </IconButton>
             </div>
             <div className="flex-1 overflow-y-auto p-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {filteredAvailableDestinations.map((dest) => (

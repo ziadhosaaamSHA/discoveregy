@@ -7,5 +7,7 @@ export { StatusModal } from "./feedback/StatusModal";
 export { EmptyState } from "./feedback/EmptyState";
 export { LoadingState } from "./feedback/LoadingState";
 export { SearchInput } from "./forms/SearchInput";
+export { PageBackButton } from "./navigation/PageBackButton";
+export { SegmentedTabs } from "./navigation/SegmentedTabs";
 export { Modal } from "../common/Modal";
 export { SectionHeader } from "../common/SectionHeader";

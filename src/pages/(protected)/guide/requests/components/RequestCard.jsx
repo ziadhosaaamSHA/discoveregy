@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Check, MessageCircle, X } from "lucide-react";
+import { IconButton } from "../../../../../components/ui";
 import { useLanguage } from "../../../../../context/LanguageContext";
 
 // RequestCard summarizes a trip request and exposes accept, chat, and cancel actions.
@@ -50,28 +51,28 @@ export function RequestCard({ request, onAccept, onChat, onCancel, isAccepted = 
 
       <div className="flex items-center gap-3 justify-end">
         {!isAccepted && (
-          <button
+          <IconButton
+            label={t("requests.accepted")}
             onClick={() => onAccept(request.id)}
             className="w-11 h-11 rounded-full bg-[#f2e0ca] flex items-center justify-center hover:bg-white transition-all shadow-md active:scale-90"
-            aria-label="Accept"
           >
             <Check size={22} className="text-[#154d7d]" strokeWidth={3} />
-          </button>
+          </IconButton>
         )}
-        <button
+        <IconButton
+          label={t("chats.title")}
           onClick={() => onChat(request.conversationId)}
           className="w-11 h-11 rounded-full bg-[#f2e0ca] flex items-center justify-center hover:bg-white transition-all shadow-md active:scale-90"
-          aria-label="Chat"
         >
           <MessageCircle size={20} className="text-[#154d7d]" />
-        </button>
-        <button
+        </IconButton>
+        <IconButton
+          label={t("common.cancel")}
           onClick={() => onCancel(request.id, isAccepted)}
           className="w-11 h-11 rounded-full bg-[#d43e0b] flex items-center justify-center hover:brightness-110 shadow-md active:scale-90 transition-all"
-          aria-label="Cancel"
         >
           <X size={20} className="text-white" strokeWidth={3} />
-        </button>
+        </IconButton>
       </div>
     </motion.div>
   );

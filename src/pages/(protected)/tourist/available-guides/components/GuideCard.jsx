@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
 import { Check, Loader2, MessageCircle, Star } from "lucide-react";
+import { IconButton } from "../../../../../components/ui";
+import { useLanguage } from "../../../../../context/LanguageContext";
 
 // GuideCard displays guide identity, rating, language tags, and quick actions.
 export function GuideCard({ guide, onBook, onChat, language, isBooking = false }) {
+  const { t } = useLanguage();
   const name = guide.name[language] || guide.name.en || "";
   const specialty = guide.specialty[language] || guide.specialty.en || "";
   const initials = name
@@ -50,19 +53,21 @@ export function GuideCard({ guide, onBook, onChat, language, isBooking = false }
       </div>
 
       <div className="flex items-center justify-center gap-5 mt-auto w-full">
-        <button
+        <IconButton
+          label={t("availableGuides.bookGuide")}
           onClick={() => onBook(guide)}
           disabled={isBooking}
           className="w-14 h-14 rounded-full bg-[#f2e0ca] flex items-center justify-center hover:bg-white transition-all shadow-lg active:scale-90 hover:shadow-[#f2e0ca]/20"
         >
           {isBooking ? <Loader2 size={26} className="animate-spin text-[#154d7d]" /> : <Check size={28} className="text-[#154d7d]" strokeWidth={3} />}
-        </button>
-        <button
+        </IconButton>
+        <IconButton
+          label={t("availableGuides.chatWithGuide")}
           onClick={() => onChat(guide)}
           className="w-14 h-14 rounded-full bg-[#f2e0ca] flex items-center justify-center hover:bg-white transition-all shadow-lg active:scale-90 hover:shadow-[#f2e0ca]/20"
         >
           <MessageCircle size={26} className="text-[#154d7d]" />
-        </button>
+        </IconButton>
       </div>
     </motion.div>
   );

@@ -122,7 +122,6 @@ export function ChatDetail({
           </div>
           <div>
             <h2 className="text-base font-bold text-black leading-tight">{conversation.touristName}</h2>
-            <p className="text-[11px] text-[#5c3505]/60 font-medium">{t("chats.online") || "Online"}</p>
           </div>
         </div>
 

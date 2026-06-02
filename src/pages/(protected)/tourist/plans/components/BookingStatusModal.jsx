@@ -1,4 +1,4 @@
-import { Modal } from "../../../../../components/ui";
+import { Button, Modal } from "../../../../../components/ui";
 import { Check, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -42,13 +42,14 @@ export function BookingStatusModal({ bookingStatus, t, onClose }) {
           {bookingStatus.message}
         </p>
 
-        <button
+        <Button
           type="button"
           onClick={onClose}
-          className="w-full py-4 rounded-2xl bg-[#e67e22] text-white font-black hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[#e67e22]/20"
+          fullWidth
+          className="py-4"
         >
           {t("booking.done") || "Done"}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

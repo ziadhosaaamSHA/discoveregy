@@ -1,4 +1,5 @@
 import { PlanCard } from "./PlanCard";
+import { Button } from "../../../../../components/ui";
 
 // PlansGrid owns the loading, empty, error, and card-list presentation states.
 export function PlansGrid({
@@ -43,12 +44,13 @@ export function PlansGrid({
           <div>
             <p className="text-red-700 font-bold italic">{noTripsMessage}</p>
             <div className="mt-4 flex justify-center">
-              <button
+              <Button
+                type="button"
                 onClick={() => navigate ? navigate("/tourist/create-plan") : window.location.assign("/tourist/create-plan")}
-                className="bg-[#e67e22] text-white px-6 py-2 rounded-full flex items-center gap-2 font-bold shadow-md hover:brightness-110 active:scale-95 transition-all"
+                className="rounded-full px-6 py-2"
               >
                 {createLabel}
-              </button>
+              </Button>
             </div>
           </div>
         ) : (

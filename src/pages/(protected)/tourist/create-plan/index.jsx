@@ -1,243 +1,58 @@
-import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronLeft, Loader2, Plus, Check, XCircle } from "lucide-react";
+import { Search, Loader2, Plus, Check, XCircle } from "lucide-react";
 import { useLanguage } from "../../../../context/LanguageContext";
 import { motion } from "framer-motion";
-import * as createPlanBackend from "./backend/createPlanBackend";
 import GeneratedPlans from "./components/GeneratedPlans";
 import EditPlan from "./components/EditPlan";
 import { formatAmount } from "../../../../shared/utils/money";
-import { Modal, PaymentConfirmationModal } from "../../../../components/ui";
-import {
-  clearCurrentBookingId,
-  clearSelectedGuide,
-  getSavedDurationHours,
-  getSavedStartTime,
-  mergeBookingInfo,
-  readBookingInfo,
-  saveCurrentBookingPlan,
-} from "../../../../services/booking-session";
-import { extractTripId } from "../../../../services/mappers/booking.mapper";
-import { readTicketPrice } from "../../../../services/mappers/place.mapper";
-import { parseBookingDateTime } from "../../../../shared/utils/dates";
-
-function createTimeOptions() {
-  const options = [];
-  for (let hour = 0; hour < 24; hour += 1) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-      const period = hour >= 12 ? "PM" : "AM";
-      const hour12 = hour % 12 || 12;
-      const minuteLabel = String(minute).padStart(2, "0");
-      options.push({ value, label: `${hour12}:${minuteLabel} ${period}` });
-    }
-  }
-  return options;
-}
-
-const TIME_OPTIONS = createTimeOptions();
+import { Button, Modal, PageBackButton, PaymentConfirmationModal } from "../../../../components/ui";
+import { TIME_OPTIONS, useCreatePlan } from "./hooks/useCreatePlan";
 
 // CreatePlan builds a custom travel plan from selected destinations and trip timing.
 export default function CreatePlan() {
   const navigate = useNavigate();
   const { isRTL, language, t } = useLanguage();
-  const [prompt, setPrompt] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedPlans, setGeneratedPlans] = useState([]);
-  const [selectedPlanId, setSelectedPlanId] = useState(null);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
-  const [saveStatus, setSaveStatus] = useState({ isOpen: false, isSuccess: false, message: "" });
-  const [bookingToConfirm, setBookingToConfirm] = useState(null);
-  const [destinations, setDestinations] = useState(() => []);
-  
-  // Customizations for the selected plan
-  const [customDestinations, setCustomDestinations] = useState([]);
-  const [showAddDestinations, setShowAddDestinations] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [startTime, setStartTime] = useState(getSavedStartTime);
-  const [durationHours, setDurationHours] = useState(getSavedDurationHours);
-  const bookingInfo = useMemo(() => readBookingInfo(), []);
-  const bookingDate = String(bookingInfo.date || "");
-  const parsedDurationHours = Number(durationHours);
-  const hasValidBookingDetails =
-    /^\d{4}-\d{2}-\d{2}$/.test(bookingDate) &&
-    /^([01]\d|2[0-3]):([0-5]\d)$/.test(startTime) &&
-    Number.isInteger(parsedDurationHours) &&
-    parsedDurationHours > 0;
-
-  useEffect(() => {
-    let cancelled = false;
-    const loadDestinations = async () => {
-      try {
-        const data = await createPlanBackend.getDestinations();
-        if (!cancelled) setDestinations(data);
-      } catch {
-        if (!cancelled) setDestinations([]);
-      }
-    };
-
-    loadDestinations();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const handleGenerate = async () => {
-    if (!prompt.trim()) return;
-    
-    setIsGenerating(true);
-    try {
-      const plans = await createPlanBackend.generatePlans(prompt, language);
-      setGeneratedPlans(plans);
-      setSelectedPlanId(null);
-      setIsEditMode(false);
-    } catch {
-      alert("Error generating plan. Please check your connection or token.");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const selectedPlan = useMemo(() => 
-    generatedPlans.find(p => p.id === selectedPlanId), 
-  [generatedPlans, selectedPlanId]);
-
-  const handleSelectPlan = (id) => {
-    setSelectedPlanId(id);
-    const plan = generatedPlans.find(p => p.id === id);
-    setCustomDestinations(plan.destinations || []); 
-    setIsEditMode(true);
-  };
-
-  const handleRemoveDest = (id) => {
-    setCustomDestinations(prev => prev.filter(d => d.id !== id));
-  };
-
-  const handleAddDest = (dest) => {
-    if (!customDestinations.find(d => d.id === dest.id)) {
-      setCustomDestinations(prev => [...prev, dest]);
-    }
-    setShowAddDestinations(false);
-  };
-
-  const filteredAvailableDestinations = useMemo(() => {
-    return destinations.filter(d => {
-      const name = d.copy[language]?.name || d.copy.en.name;
-      return name.toLowerCase().includes(searchQuery.toLowerCase()) && 
-             !customDestinations.find(cd => cd.id === d.id);
-    });
-  }, [searchQuery, customDestinations, language, destinations]);
-
-  const customPlanAmount = useMemo(
-    () => customDestinations.reduce((sum, destination) => sum + readTicketPrice(destination), 0),
-    [customDestinations]
-  );
-
-  const handleSubmit = async () => {
-    if (!selectedPlanId) {
-      alert(t("validation.selectPlanFirst"));
-      return;
-    }
-
-    if (!hasValidBookingDetails) {
-      alert(t("validation.fillAllFields"));
-      return;
-    }
-
-    if (customDestinations.length === 0) {
-      alert(t("createPlan.emptyStops"));
-      return;
-    }
-    if (!selectedPlan) {
-      alert(t("validation.selectPlanFirst"));
-      return;
-    }
-
-    const startDate = parseBookingDateTime(bookingDate, startTime);
-    if (!startDate) {
-      alert(t("validation.fillAllFields"));
-      return;
-    }
-
-    const endDate = new Date(startDate);
-    endDate.setHours(endDate.getHours() + parsedDurationHours);
-
-    setBookingToConfirm({
-      selectedPlan,
-      startDate,
-      endDate,
-      amount: customPlanAmount,
-    });
-  };
-
-  const confirmCustomPlan = async () => {
-    if (!bookingToConfirm || isSubmittingPlan) return;
-    const { selectedPlan, startDate, endDate, amount } = bookingToConfirm;
-    setIsSubmittingPlan(true);
-    try {
-      const destinationNames = customDestinations
-        .map((destination) => destination.copy?.[language]?.name || destination.copy?.en?.name)
-        .filter(Boolean)
-        .join(", ");
-
-      const response = await createPlanBackend.createCustomTrip({
-        Title: selectedPlan.title,
-        Description: selectedPlan.text,
-        StartDateTime: startDate.toISOString(),
-        EndDateTime: endDate.toISOString(),
-        Notes: prompt,
-        Destination: destinationNames,
-        Price: amount,
-      });
-      const createdTripId = extractTripId(response);
-      if (!createdTripId) {
-        console.error("Trip creation response:", response);
-        throw new Error("Trip created successfully, but could not resolve trip ID. Please check your trips in the Plans section.");
-      }
-
-      const planData = {
-        planId: selectedPlanId,
-        tripId: createdTripId,
-        title: selectedPlan.title,
-        date: bookingDate,
-        duration: `${parsedDurationHours}h`,
-        startTime,
-        destinations: customDestinations.map(d => d.id),
-        destinationIds: customDestinations.map(d => d.id),
-        amount,
-      };
-
-      saveCurrentBookingPlan(planData);
-      mergeBookingInfo({ startTime, durationHours: parsedDurationHours });
-      clearCurrentBookingId();
-      clearSelectedGuide();
-
-      setSaveStatus({
-        isOpen: true,
-        isSuccess: true,
-        message: t("createPlan.chooseGuideNext") || "Custom plan saved. Choose a guide to complete booking.",
-      });
-      setBookingToConfirm(null);
-    } catch (error) {
-      setSaveStatus({
-        isOpen: true,
-        isSuccess: false,
-        message: error?.message || "Could not save custom plan. Please try again.",
-      });
-    } finally {
-      setIsSubmittingPlan(false);
-    }
-  };
-  const isDurationFilled = durationHours !== '' && durationHours !== null && durationHours !== undefined;
+  const {
+    bookingDate,
+    bookingToConfirm,
+    customDestinations,
+    customPlanAmount,
+    durationHours,
+    filteredAvailableDestinations,
+    generatedPlans,
+    hasValidBookingDetails,
+    isDurationFilled,
+    isEditMode,
+    isGenerating,
+    isSubmittingPlan,
+    prompt,
+    saveStatus,
+    searchQuery,
+    selectedPlan,
+    showAddDestinations,
+    startTime,
+    parsedDurationHours,
+    addDestination,
+    closeSaveStatus,
+    confirmCustomPlan,
+    generatePlans,
+    removeDestination,
+    selectPlan,
+    setBookingToConfirm,
+    setDurationHours,
+    setIsEditMode,
+    setPrompt,
+    setSearchQuery,
+    setShowAddDestinations,
+    setStartTime,
+    submitCustomPlan,
+  } = useCreatePlan({ language, navigate, t });
   return (
     <div className="min-h-screen bg-[#ead9c5] text-black font-sans pb-20" dir={isRTL ? "rtl" : "ltr"}>
       <header className="max-w-7xl mx-auto px-6 pt-6 pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)} className="hover:opacity-70 transition-opacity" aria-label="Go Back">
-              {isRTL ? <ChevronLeft size={28} strokeWidth={1.5} className="rotate-180" /> : <ChevronLeft size={28} strokeWidth={1.5} />}
-            </button>
+            <PageBackButton onClick={() => navigate(-1)} className="bg-transparent shadow-none hover:bg-black/5" />
             <h1 className="text-3xl font-black tracking-tight">{t("createPlan.title") || "Create Plan"}</h1>
           </div>
           <img src="/images/DiscoverEgyptLogo.png" alt="Discover Egypt" className="h-16 w-auto" />
@@ -252,22 +67,23 @@ export default function CreatePlan() {
               type="text" 
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleGenerate()}
+              onKeyPress={(e) => e.key === 'Enter' && generatePlans()}
               placeholder={t("createPlan.placeholder")}
               className="bg-transparent border-none outline-none text-2xl text-gray-800 w-full font-black placeholder-gray-500"
             />
-            <button 
-              onClick={handleGenerate}
+            <Button
+              type="button"
+              onClick={generatePlans}
               disabled={isGenerating}
-              className={`${isRTL ? "mr-4" : "ml-4"} bg-[#e67e22] text-white px-8 py-3 rounded-2xl font-black text-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 min-w-[140px] shadow-lg`}
+              className={`${isRTL ? "mr-4" : "ml-4"} min-w-[140px]`}
             >
               {isGenerating ? <Loader2 className="animate-spin mx-auto" /> : t("createPlan.generate")}
-            </button>
+            </Button>
           </div>
         </div>
 
         {generatedPlans.length > 0 && !isEditMode && (
-          <GeneratedPlans generatedPlans={generatedPlans} onSelectPlan={handleSelectPlan} isRTL={isRTL} prompt={prompt} t={t} />
+          <GeneratedPlans generatedPlans={generatedPlans} onSelectPlan={selectPlan} isRTL={isRTL} prompt={prompt} t={t} />
         )}
 
         {isEditMode && selectedPlan && (
@@ -278,13 +94,13 @@ export default function CreatePlan() {
             language={language}
             t={t}
             customDestinations={customDestinations}
-            handleRemoveDest={handleRemoveDest}
+            handleRemoveDest={removeDestination}
             setShowAddDestinations={setShowAddDestinations}
             showAddDestinations={showAddDestinations}
             filteredAvailableDestinations={filteredAvailableDestinations}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            handleAddDest={handleAddDest}
+            handleAddDest={addDestination}
             bookingDate={bookingDate}
             TIME_OPTIONS={TIME_OPTIONS}
             startTime={startTime}
@@ -293,7 +109,7 @@ export default function CreatePlan() {
             setDurationHours={setDurationHours}
             isDurationFilled={isDurationFilled}
             navigate={navigate}
-            handleSubmit={handleSubmit}
+            handleSubmit={submitCustomPlan}
             isSubmittingPlan={isSubmittingPlan}
             hasValidBookingDetails={hasValidBookingDetails}
             customPlanAmount={customPlanAmount}
@@ -340,11 +156,7 @@ export default function CreatePlan() {
       />
       <Modal
         isOpen={saveStatus.isOpen}
-        onClose={() => {
-          const shouldNavigate = saveStatus.isSuccess;
-          setSaveStatus({ isOpen: false, isSuccess: false, message: "" });
-          if (shouldNavigate) navigate("/tourist/available-guides?mode=custom");
-        }}
+        onClose={closeSaveStatus}
         title=""
         maxWidth="max-w-md"
       >
@@ -379,17 +191,14 @@ export default function CreatePlan() {
             {saveStatus.message}
           </p>
 
-          <button
+          <Button
             type="button"
-            onClick={() => {
-              const shouldNavigate = saveStatus.isSuccess;
-              setSaveStatus({ isOpen: false, isSuccess: false, message: "" });
-              if (shouldNavigate) navigate("/tourist/available-guides?mode=custom");
-            }}
-            className="w-full py-4 rounded-2xl bg-[#e67e22] text-white font-black hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[#e67e22]/20"
+            onClick={closeSaveStatus}
+            fullWidth
+            className="py-4"
           >
             {saveStatus.isSuccess ? (t("availableGuides.title") || "Available Tour Guides") : (t("booking.done") || "Done")}
-          </button>
+          </Button>
         </div>
       </Modal>
     </div>

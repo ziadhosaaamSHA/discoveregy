@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
+import { Button, IconButton } from "../../../../../components/ui";
 import { useLanguage } from "../../../../../context/LanguageContext";
 
 // SuccessModal confirms booking completion before moving the user onward.
@@ -24,12 +25,13 @@ export function SuccessModal({ onClose }) {
           boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
         }}
       >
-        <button
+        <IconButton
+          label={t("common.close")}
           onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
         >
           <X size={16} />
-        </button>
+        </IconButton>
         <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #E8A020 0%, #d4901a 100%)" }}>
           <Check size={36} className="text-white" strokeWidth={3} />
         </div>
@@ -37,13 +39,13 @@ export function SuccessModal({ onClose }) {
           <h2 className="text-2xl font-black text-white tracking-tight">{t("booking.confirmedTitle")}</h2>
           <p className="text-gray-300 text-[14px] leading-relaxed">{t("booking.contactSoon")}</p>
         </div>
-        <button
+        <Button
+          type="button"
+          fullWidth
           onClick={onClose}
-          className="w-full py-3 rounded-xl font-bold text-white text-[15px] transition-all hover:brightness-110"
-          style={{ background: "linear-gradient(135deg, #E8A020 0%, #d4901a 100%)" }}
         >
           {t("booking.done")}
-        </button>
+        </Button>
       </motion.div>
     </motion.div>
   );

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MessageCircle, X } from "lucide-react";
+import { IconButton } from "../../../../../components/ui";
 
 // UpcomingTrips renders bookings and custom trips list for tourists.
 export default function UpcomingTrips({
@@ -60,30 +61,28 @@ export default function UpcomingTrips({
                 </div>
                  <div className="flex items-center gap-2">
                    {(trip.conversationId || trip.guideId) ? (
-                     <button
+                     <IconButton
+                       label={t("chats.title") || "Chat"}
                        type="button"
                        onClick={() => onChat(trip)}
                        className="w-10 h-10 rounded-full bg-[#f2e0ca] flex items-center justify-center hover:bg-white transition-colors flex-shrink-0 cursor-pointer"
-                       aria-label={t("chats.title") || "Chat"}
-                       title={t("chats.title") || "Chat"}
                      >
                        <MessageCircle size={18} className="text-[#154d7d]" />
-                     </button>
+                     </IconButton>
                    ) : (
                      <div className="w-10 h-10 rounded-full bg-[#f2e0ca]/60 flex items-center justify-center flex-shrink-0" title="No chat guide assigned">
                        <MessageCircle size={18} className="text-[#154d7d]/60" />
                      </div>
                    )}
-                    <button
+                    <IconButton
+                      label={t("destination.cancelTrip")}
                       type="button"
                       onClick={() => requestCancelTrip(trip)}
                       disabled={cancellingTripId === trip.id}
                       className="w-10 h-10 rounded-full bg-[#f2e0ca] flex items-center justify-center hover:bg-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                      aria-label={t("destination.cancelTrip")}
-                      title={t("destination.cancelTrip")}
                     >
                       <X size={18} className="text-[#154d7d]" />
-                    </button>
+                    </IconButton>
                  </div>
               </motion.div>
             );
