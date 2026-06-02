@@ -86,7 +86,7 @@ const sharedDefaultLayoutRoutes = [
 // App owns URL-to-page mapping and keeps route protection explicit.
 function App() {
   const location = useLocation();
-  const hideChat = ["/login", "/signup", "/forgot-password", "/admin/login"].includes(location.pathname) || location.pathname.startsWith("/chats");
+  const hideChat = ["/login", "/signup", "/forgot-password", "/admin/login", "/tourist/pay", "/tourist/plans", "/tourist/create-plan", "/tourist/available-guides", "/guide/requests", "/guide/home", "/shared/chats", "/shared/notifications", "/admin"].includes(location.pathname) || location.pathname.startsWith("/chats");
 
   return (
     <>
