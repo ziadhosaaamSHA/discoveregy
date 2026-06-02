@@ -5,6 +5,8 @@ import { useLanguage } from "../../../../context/LanguageContext";
 import { Modal } from "../../../../components/common/Modal";
 import { tourismApi } from "../../../../services/tourism-api";
 import { upsertStoredConversation } from "../../../../services/conversations-store";
+import { parseBookingDateTime } from "../../../../shared/utils/dates";
+import { EmptyState, LoadingState } from "../../../../components/shared";
 import { GuideCard } from "./components/GuideCard";
 import {
   extractArray,
@@ -14,16 +16,7 @@ import {
   normalizeGuide,
   parseDateString,
   parseDurationDays,
-} from "./components/guideMappers";
-
-function parseBookingDateTime(dateValue, timeValue) {
-  const parsedDate = String(dateValue || "").trim();
-  const parsedTime = String(timeValue || "").trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(parsedDate)) return null;
-  if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(parsedTime)) return null;
-  const result = new Date(`${parsedDate}T${parsedTime}:00`);
-  return Number.isNaN(result.getTime()) ? null : result;
-}
+} from "../../../../features/guides/guideMappers";
 
 // AvailableGuides lists bookable guides and starts guide chat or booking actions.
 export default function AvailableGuides() {
@@ -185,17 +178,11 @@ export default function AvailableGuides() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
             {isLoadingGuides ? (
-              <div className="col-span-full py-14 text-center bg-black/5 rounded-[40px] border-2 border-dashed border-black/10">
-                <p className="text-gray-600 font-bold italic">{t("common.loading") || "Loading..."}</p>
-              </div>
+              <LoadingState>{t("common.loading") || "Loading..."}</LoadingState>
             ) : guidesError ? (
-              <div className="col-span-full py-14 text-center bg-red-50 rounded-[40px] border-2 border-red-200">
-                <p className="text-red-700 font-bold italic">{t("availableGuides.errorLoading")}</p>
-              </div>
+              <EmptyState tone="error">{t("availableGuides.errorLoading")}</EmptyState>
             ) : guides.length === 0 ? (
-              <div className="col-span-full py-14 text-center bg-black/5 rounded-[40px] border-2 border-dashed border-black/10">
-                <p className="text-gray-600 font-bold italic">{t("availableGuides.noGuides")}</p>
-              </div>
+              <EmptyState>{t("availableGuides.noGuides")}</EmptyState>
             ) : (
               guides.map((guide) => (
                 <GuideCard

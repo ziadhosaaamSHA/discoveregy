@@ -7,8 +7,8 @@ import { BookingSettings } from "./components/BookingSettings";
 import { BookingStatusModal } from "./components/BookingStatusModal";
 import { PlansGrid } from "./components/PlansGrid";
 import { PlansHeader } from "./components/PlansHeader";
-import { CreditCard } from "lucide-react";
 import { RecommendedDestinationBanner } from "./components/RecommendedDestinationBanner";
+import { PaymentConfirmationModal } from "../../../../features/bookings/PaymentConfirmationModal";
 import {
   extractBookingId,
   formatAmount,
@@ -142,17 +142,6 @@ export default function Plans() {
     if (!destId) return plans;
     return activeTab === "matching" ? filteredPlans : plans;
   }, [destId, activeTab, filteredPlans, plans]);
-
-  // Plans that do NOT reference the selected destination
-  const otherPlans = useMemo(() => {
-    if (!destId) return [];
-    return plans.filter((plan) => {
-      if (Array.isArray(plan.destinations) && plan.destinations.includes(destId)) return false;
-      const details = tripDetailsById[plan.tripId];
-      if (details && Array.isArray(details.placeIds) && details.placeIds.includes(destId)) return false;
-      return true;
-    });
-  }, [destId, plans, tripDetailsById]);
 
   useEffect(() => {
     let cancelled = false;
@@ -397,75 +386,35 @@ export default function Plans() {
 
       <BookingStatusModal bookingStatus={bookingStatus} t={t} onClose={closeBookingStatus} />
 
-      <Modal
+      <PaymentConfirmationModal
         isOpen={!!bookingToConfirm}
-        onClose={() => (isSubmittingBooking ? null : setBookingToConfirm(null))}
+        onClose={() => setBookingToConfirm(null)}
         title={t("booking.confirmPaymentTitle") || "Confirm Payment"}
-        maxWidth="max-w-md"
-      >
-        {bookingToConfirm && (
-          <div className="space-y-6 text-center" dir={isRTL ? "rtl" : "ltr"}>
-            <div className="flex flex-col items-center">
-              <div className="w-16 h-16 bg-[#e67e22]/10 rounded-full flex items-center justify-center mb-3">
-                <CreditCard size={30} className="text-[#e67e22]" />
-              </div>
-              <h3 className="text-xl font-black text-gray-800">{bookingToConfirm.planData.title}</h3>
-              {bookingToConfirm.selectedPlan.guideName && (
-                <p className="text-sm font-semibold text-gray-500 mt-1">
-                  {t("booking.withGuide") || "With Guide"}: {bookingToConfirm.selectedPlan.guideName}
-                </p>
-              )}
-            </div>
-
-            <div className="rounded-3xl bg-[#f7eadb]/80 border border-[#8a4b10]/10 p-6 shadow-inner">
-              <p className="text-xs font-black uppercase tracking-wider text-[#8a4b10]/80">{t("booking.amountDue")}</p>
-              <p className="mt-2 text-4xl font-black text-[#d43e0b]">
-                {formatAmount(bookingToConfirm.selectedPlan.price, language)}
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 text-sm font-bold text-gray-600 space-y-2 text-left">
-              <div className="flex justify-between">
-                <span className="text-gray-400">{t("createPlan.dateLabel") || "Date"}:</span>
-                <span className="text-gray-800">{bookingDate}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">{t("createPlan.startTimeLabel") || "Time"}:</span>
-                <span className="text-gray-800">{startTime}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">{t("createPlan.durationLabel") || "Duration"}:</span>
-                <span className="text-gray-800">{parsedDurationHours} {t("createPlan.hours")}</span>
-              </div>
-            </div>
-
-            <p className="text-sm font-medium text-gray-500 px-2 leading-relaxed">
-              {t("booking.confirmPaymentBody", {
-                amount: formatAmount(bookingToConfirm.selectedPlan.price, language),
-              })}
-            </p>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setBookingToConfirm(null)}
-                disabled={isSubmittingBooking}
-                className="flex-1 rounded-2xl bg-gray-100 py-3.5 font-black text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50"
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={confirmBooking}
-                disabled={isSubmittingBooking}
-                className="flex-1 rounded-2xl bg-[#e67e22] py-3.5 font-black text-white hover:brightness-110 shadow-lg active:scale-95 transition-all disabled:opacity-50"
-              >
-                {isSubmittingBooking ? t("booking.submitting") : t("booking.confirmAndPay")}
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
+        itemTitle={bookingToConfirm?.planData.title || ""}
+        subtitle={
+          bookingToConfirm?.selectedPlan.guideName
+            ? `${t("booking.withGuide") || "With Guide"}: ${bookingToConfirm.selectedPlan.guideName}`
+            : ""
+        }
+        amountLabel={t("booking.amountDue")}
+        amount={bookingToConfirm ? formatAmount(bookingToConfirm.selectedPlan.price, language) : ""}
+        details={[
+          { label: t("createPlan.dateLabel") || "Date", value: bookingDate },
+          { label: t("createPlan.startTimeLabel") || "Time", value: startTime },
+          { label: t("createPlan.durationLabel") || "Duration", value: `${parsedDurationHours} ${t("createPlan.hours")}` },
+        ]}
+        message={
+          bookingToConfirm
+            ? t("booking.confirmPaymentBody", { amount: formatAmount(bookingToConfirm.selectedPlan.price, language) })
+            : ""
+        }
+        cancelLabel={t("common.cancel")}
+        confirmLabel={t("booking.confirmAndPay")}
+        loadingLabel={t("booking.submitting")}
+        isLoading={isSubmittingBooking}
+        isRTL={isRTL}
+        onConfirm={confirmBooking}
+      />
 
 
       <Modal

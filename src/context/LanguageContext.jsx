@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { adminTranslations } from "./translations/admin";
 
 const LANGUAGE_STORAGE_KEY = "degy_language";
 const RTL_LANGUAGES = new Set(["ar"]);
@@ -373,28 +374,7 @@ const TRANSLATIONS = {
       matchingTrips: "Matching trips",
       allTrips: "All trips",
     },
-    admin: {
-      eyebrow: "Admin",
-      title: "Dashboard",
-      subtitle: "Live overview of users, guides, places, trips, bookings, and revenue.",
-      refresh: "Refresh",
-      loadFailed: "Could not load dashboard data.",
-      users: "Users",
-      guides: "Guides",
-      places: "Places",
-      readyTrips: "Ready trips",
-      customTrips: "Custom trips",
-      revenue: "Revenue",
-      recentBookings: "Recent bookings",
-      pendingGuides: "Pending guides",
-      trip: "Trip",
-      guide: "Guide",
-      amount: "Amount",
-      status: "Status",
-      unassigned: "Unassigned",
-      noBookings: "No bookings found.",
-      noPendingGuides: "No pending guides.",
-    },
+    admin: adminTranslations.en,
   },
   ar: {
     meta: {
@@ -754,28 +734,7 @@ const TRANSLATIONS = {
       matchingTrips: "الرحلات المتطابقة",
       allTrips: "جميع الرحلات",
     },
-    admin: {
-      eyebrow: "المدير",
-      title: "لوحة التحكم",
-      subtitle: "نظرة مباشرة على المستخدمين، المرشدين، الأماكن، الرحلات، الحجوزات، والإيرادات.",
-      refresh: "تحديث",
-      loadFailed: "تعذر تحميل بيانات لوحة التحكم.",
-      users: "المستخدمون",
-      guides: "المرشدون",
-      places: "الأماكن",
-      readyTrips: "الرحلات الجاهزة",
-      customTrips: "الرحلات المخصصة",
-      revenue: "الإيرادات",
-      recentBookings: "أحدث الحجوزات",
-      pendingGuides: "مرشدون بانتظار الموافقة",
-      trip: "الرحلة",
-      guide: "المرشد",
-      amount: "المبلغ",
-      status: "الحالة",
-      unassigned: "غير مخصص",
-      noBookings: "لا توجد حجوزات.",
-      noPendingGuides: "لا يوجد مرشدون بانتظار الموافقة.",
-    },
+    admin: adminTranslations.ar,
   },
 };
 

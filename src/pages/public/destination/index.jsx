@@ -308,7 +308,7 @@ function readCoordinate(...values) {
   if (placeDetails?.photos?.length > 0) {
       carouselImages = placeDetails.photos?.map((image, i) => ({
       id: i,
-      src: image,
+      src: resolveApiAssetUrl(image),
       alt: `${name} photo ${i + 1}`,
     }));
   }

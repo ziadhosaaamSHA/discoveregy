@@ -1,649 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { useLanguage } from "../../../../context/LanguageContext";
 import { useAuth } from "../../../../context/AuthContext";
 import { tourismApi } from "../../../../services/tourism-api";
 import { fetchNationalities } from "../../../../services/auth-api";
 import { resolveApiAssetUrl } from "../../../../services/api-client";
-
-// --- STYLING CONSTANTS (matching colors in reference request) ---
-const COLORS = {
-  primary: "#C8860A",
-  primaryLight: "#E8A830",
-  primaryDark: "#8B5E08",
-  bg: "#1A1410",
-  surface: "#231C15",
-  surfaceHover: "#2E2318",
-  border: "#3D2E1E",
-  text: "#F5ECD7",
-  textMuted: "#9A8468",
-  textDim: "#6B5A45",
-  danger: "#C0392B",
-  dangerLight: "#E74C3C",
-  success: "#27AE60",
-  successLight: "#2ECC71",
-  warning: "#E67E22",
-  info: "#2980B9",
-};
-
-const icons = {
-  dashboard: "⊞",
-  users: "👥",
-  guides: "🧭",
-  places: "🏛",
-  trips: "✈",
-  bookings: "📋",
-  payments: "💳",
-  reviews: "⭐",
-  nationalities: "🌍",
-  roles: "🛡",
-  notifications: "🔔",
-  menu: "☰",
-  close: "✕",
-  approve: "✓",
-  reject: "✗",
-  delete: "🗑",
-  view: "👁",
-  edit: "✏",
-  add: "＋",
-  search: "⌕",
-  logout: "⎋",
-  pending: "⏳",
-  active: "●",
-  chevron: "›",
-};
-
-// --- BILINGUAL LOCAL TRANSLATIONS DICTIONARY ---
-const localT = {
-  en: {
-    sidebar: {
-      title: "Discover Egypt",
-      subtitle: "Admin Panel",
-      dashboard: "Dashboard",
-      guides: "Guide Approvals",
-      users: "Users",
-      places: "Places",
-      trips: "Trips",
-      bookings: "Bookings",
-      payments: "Payments",
-      reviews: "Reviews",
-      nationalities: "Nationalities",
-      roles: "Roles",
-      notifications: "Notifications",
-      logout: "Logout",
-      superAdmin: "Super Admin",
-    },
-    dashboard: {
-      welcome: "Welcome back, Admin 👋",
-      subtitle: "Here's what's happening with Discover Egypt today.",
-      totalUsers: "Total Users",
-      activeGuides: "Active Guides",
-      pendingGuides: "Pending Guides",
-      places: "Places",
-      readyTrips: "Ready Trips",
-      customTrips: "Custom Trips",
-      bookings: "Bookings",
-      revenue: "Revenue",
-      pendingApprovals: "Pending Guide Approvals",
-      waitingReview: "{{count}} guides waiting for review",
-      recentBookings: "Recent Bookings",
-      unassigned: "Unassigned",
-      noPending: "No pending guides",
-      noBookings: "No recent bookings",
-    },
-    guides: {
-      title: "Guide Management",
-      pending: "Pending",
-      active: "Active/All",
-      searchPlaceholder: "Search guides...",
-      license: "License",
-      applied: "Applied",
-      viewLicense: "View License",
-      approve: "Approve",
-      reject: "Reject",
-      rejectReasonTitle: "Reject Guide Application",
-      rejectReasonDesc: "Please provide a reason for rejection.",
-      reasonPlaceholder: "Enter rejection reason...",
-      cancel: "Cancel",
-      confirmReject: "Confirm Reject",
-      noPendingGuides: "No pending guides found.",
-      noGuidesToShow: "No guides to show.",
-      status: "Status",
-      actions: "Actions",
-      suspend: "Suspend",
-      licenseNumber: "License Number: {{number}}",
-    },
-    users: {
-      title: "User Management",
-      addUser: "Add User",
-      searchPlaceholder: "Search users by name or email...",
-      user: "User",
-      role: "Role",
-      status: "Status",
-      joined: "Joined",
-      bookings: "Bookings",
-      actions: "Actions",
-      view: "View",
-      delete: "Delete",
-      noUsers: "No users found.",
-      assignRole: "Assign Role",
-      removeRole: "Remove Role",
-      currentRoles: "Current Roles",
-      selectRole: "Select a role...",
-    },
-    places: {
-      title: "Places Management",
-      importGeoapify: "Import from Geoapify",
-      addPlace: "Add Place",
-      editPlace: "Edit Place",
-      searchPlaceholder: "Search places by name or city...",
-      place: "Place",
-      city: "City",
-      category: "Category",
-      rating: "Rating",
-      price: "Ticket Price",
-      actions: "Actions",
-      edit: "Edit",
-      delete: "Delete",
-      free: "Free",
-      noPlaces: "No places found.",
-      nameEn: "Name (EN)",
-      nameAr: "Name (AR)",
-      descEn: "Description (EN)",
-      descAr: "Description (AR)",
-      cityEn: "City (EN)",
-      cityAr: "City (AR)",
-      latitude: "Latitude",
-      longitude: "Longitude",
-      ticketPrice: "Ticket Price (EGP)",
-      categoryLabel: "Category ID (e.g. 1, 2, 3)",
-      mainImage: "Main Image File",
-      saving: "Saving...",
-      save: "Save",
-      importing: "Importing...",
-      importSuccess: "Places imported successfully!",
-      importFailed: "Failed to import places.",
-    },
-    trips: {
-      title: "Trip Management",
-      addTrip: "Add Trip",
-      readyTrips: "Ready Trips",
-      customTrips: "Custom Trips",
-      searchPlaceholder: "Search trips...",
-      trip: "Trip",
-      price: "Price",
-      duration: "Duration",
-      actions: "Actions",
-      delete: "Delete",
-      noTrips: "No trips found.",
-      titleEn: "Title (EN)",
-      titleAr: "Title (AR)",
-      descEn: "Description (EN)",
-      descAr: "Description (AR)",
-      startDateTime: "Start Date & Time",
-      endDateTime: "End Date & Time",
-      guide: "Guide",
-      selectGuide: "Select a guide...",
-      image: "Trip Image File",
-      places: "Places",
-      selectPlaces: "Select Places (Hold Ctrl/Cmd to select multiple)",
-      companyId: "Company ID",
-    },
-    bookings: {
-      title: "All Bookings",
-      searchPlaceholder: "Search bookings by tourist or plan...",
-      id: "#",
-      tourist: "Tourist",
-      trip: "Trip",
-      guide: "Guide",
-      amount: "Amount",
-      status: "Status",
-      date: "Date",
-      actions: "Actions",
-      confirm: "Confirm",
-      cancel: "Cancel",
-      noBookings: "No bookings found.",
-      cancelBookingTitle: "Cancel Booking",
-      cancelReasonDesc: "Provide a reason for cancellation.",
-      reasonPlaceholder: "Reason for cancellation...",
-      confirmCancel: "Cancel Booking",
-    },
-    payments: {
-      title: "Payments Dashboard",
-      searchPlaceholder: "Search payments by tourist or booking...",
-      id: "Payment ID",
-      tourist: "Tourist",
-      bookingId: "Booking ID",
-      amount: "Amount",
-      status: "Status",
-      actions: "Actions",
-      refund: "Refund",
-      noPayments: "No payments found.",
-      refundTitle: "Refund Payment",
-      refundDesc: "Enter the refund details below.",
-      reasonLabel: "Refund Reason",
-      reasonPlaceholder: "e.g., Tourist cancelled request",
-      amountLabel: "Amount (Optional, default is full amount)",
-      confirmRefund: "Process Refund",
-      refundSuccess: "Refund processed successfully!",
-      refundFailed: "Refund failed.",
-    },
-    reviews: {
-      title: "Review Management",
-      selectPlace: "Select a Place to view reviews:",
-      allPlaces: "-- Select Place --",
-      noReviews: "No reviews found for this place.",
-      id: "ID",
-      rating: "Rating",
-      comment: "Comment",
-      actions: "Actions",
-      delete: "Delete",
-    },
-    nationalities: {
-      title: "Nationality Management",
-      addNationality: "Add Nationality",
-      editNationality: "Edit Nationality",
-      nameEn: "Name (EN)",
-      nameAr: "Name (AR)",
-      actions: "Actions",
-      edit: "Edit",
-      delete: "Delete",
-      noNationalities: "No nationalities found.",
-    },
-    roles: {
-      title: "Role Management",
-      addRole: "Add Role",
-      name: "Role Name",
-      actions: "Actions",
-      delete: "Delete",
-      noRoles: "No roles found.",
-    },
-    notifications: {
-      title: "System Notifications",
-      sendNotification: "Send System Broadcast",
-      notifTitle: "Notification Title",
-      content: "Message Content",
-      send: "Send Notification",
-      sending: "Sending...",
-      actions: "Actions",
-      delete: "Delete",
-      noNotifications: "No notifications found.",
-    },
-    common: {
-      loading: "Loading data, please wait...",
-      error: "An error occurred: ",
-      noData: "No data available.",
-      success: "Action completed successfully!",
-    }
-  },
-  ar: {
-    sidebar: {
-      title: "اكتشف مصر",
-      subtitle: "لوحة التحكم",
-      dashboard: "لوحة القيادة",
-      guides: "موافقات المرشدين",
-      users: "المستخدمون",
-      places: "الأماكن",
-      trips: "الرحلات",
-      bookings: "الحجوزات",
-      payments: "المدفوعات",
-      reviews: "التقييمات",
-      nationalities: "الجنسيات",
-      roles: "الأدوار",
-      notifications: "الإشعارات",
-      logout: "تسجيل الخروج",
-      superAdmin: "مشرف عام",
-    },
-    dashboard: {
-      welcome: "مرحباً بك مجدداً، المسؤول 👋",
-      subtitle: "إليك ما يحدث في اكتشف مصر اليوم.",
-      totalUsers: "إجمالي المستخدمين",
-      activeGuides: "المرشدين النشطين",
-      pendingGuides: "المرشدين بانتظار الموافقة",
-      places: "الأماكن",
-      readyTrips: "الرحلات الجاهزة",
-      customTrips: "الرحلات المخصصة",
-      bookings: "الحجوزات",
-      revenue: "الإيرادات",
-      pendingApprovals: "مرشدون بانتظار الموافقة",
-      waitingReview: "{{count}} مرشدين بانتظار المراجعة",
-      recentBookings: "أحدث الحجوزات",
-      unassigned: "غير محدد",
-      noPending: "لا يوجد مرشدون معلقون",
-      noBookings: "لا توجد حجوزات حديثة",
-    },
-    guides: {
-      title: "إدارة المرشدين",
-      pending: "قيد الانتظار",
-      active: "النشطين / الكل",
-      searchPlaceholder: "البحث عن مرشدين...",
-      license: "الترخيص",
-      applied: "تاريخ التقديم",
-      viewLicense: "عرض الترخيص",
-      approve: "موافقة",
-      reject: "رفض",
-      rejectReasonTitle: "رفض طلب المرشد",
-      rejectReasonDesc: "يرجى تقديم سبب الرفض.",
-      reasonPlaceholder: "أدخل سبب الرفض...",
-      cancel: "إلغاء",
-      confirmReject: "تأكيد الرفض",
-      noPendingGuides: "لم يتم العثور على مرشدين معلقين.",
-      noGuidesToShow: "لا يوجد مرشدين لعرضهم.",
-      status: "الحالة",
-      actions: "الإجراءات",
-      suspend: "إيقاف",
-      licenseNumber: "رقم الترخيص: {{number}}",
-    },
-    users: {
-      title: "إدارة المستخدمين",
-      addUser: "إضافة مستخدم",
-      searchPlaceholder: "البحث عن المستخدمين بالاسم أو البريد...",
-      user: "المستخدم",
-      role: "الدور",
-      status: "الحالة",
-      joined: "تاريخ الانضمام",
-      bookings: "الحجوزات",
-      actions: "الإجراءات",
-      view: "عرض",
-      delete: "حذف",
-      noUsers: "لم يتم العثور على مستخدمين.",
-      assignRole: "تعيين دور",
-      removeRole: "إزالة دور",
-      currentRoles: "الأدوار الحالية",
-      selectRole: "اختر دوراً...",
-    },
-    places: {
-      title: "إدارة الأماكن",
-      importGeoapify: "استيراد من Geoapify",
-      addPlace: "إضافة مكان",
-      editPlace: "تعديل المكان",
-      searchPlaceholder: "البحث عن الأماكن بالاسم أو المدينة...",
-      place: "المكان",
-      city: "المدينة",
-      category: "الفئة",
-      rating: "التقييم",
-      price: "سعر التذكرة",
-      actions: "الإجراءات",
-      edit: "تعديل",
-      delete: "حذف",
-      free: "مجاني",
-      noPlaces: "لم يتم العثور على أماكن.",
-      nameEn: "الاسم (بالانجليزية)",
-      nameAr: "الاسم (بالعربية)",
-      descEn: "الوصف (بالانجليزية)",
-      descAr: "الوصف (بالعربية)",
-      cityEn: "المدينة (بالانجليزية)",
-      cityAr: "المدينة (بالعربية)",
-      latitude: "خط العرض",
-      longitude: "خط الطول",
-      ticketPrice: "سعر التذكرة (جنيه)",
-      categoryLabel: "رقم الفئة (مثال: 1، 2، 3)",
-      mainImage: "ملف الصورة الرئيسية",
-      saving: "جاري الحفظ...",
-      save: "حفظ",
-      importing: "جاري الاستيراد...",
-      importSuccess: "تم استيراد الأماكن بنجاح!",
-      importFailed: "فشل استيراد الأماكن.",
-    },
-    trips: {
-      title: "إدارة الرحلات",
-      addTrip: "إضافة رحلة",
-      readyTrips: "الرحلات الجاهزة",
-      customTrips: "الرحلات المخصصة",
-      searchPlaceholder: "البحث عن رحلات...",
-      trip: "الرحلة",
-      price: "السعر",
-      duration: "المدة",
-      actions: "الإجراءات",
-      delete: "حذف",
-      noTrips: "لم يتم العثور على رحلات.",
-      titleEn: "العنوان (بالانجليزية)",
-      titleAr: "العنوان (بالعربية)",
-      descEn: "الوصف (بالانجليزية)",
-      descAr: "الوصف (بالعربية)",
-      startDateTime: "تاريخ ووقت البدء",
-      endDateTime: "تاريخ ووقت الانتهاء",
-      guide: "المرشد",
-      selectGuide: "اختر مرشداً...",
-      image: "ملف صورة الرحلة",
-      places: "الأماكن",
-      selectPlaces: "اختر الأماكن (اضغط Ctrl/Cmd للاختيار المتعدد)",
-      companyId: "معرف الشركة",
-    },
-    bookings: {
-      title: "جميع الحجوزات",
-      searchPlaceholder: "البحث في الحجوزات باسم السائح أو الخطة...",
-      id: "المعرف",
-      tourist: "السائح",
-      trip: "الرحلة",
-      guide: "المرشد",
-      amount: "المبلغ",
-      status: "الحالة",
-      date: "التاريخ",
-      actions: "الإجراءات",
-      confirm: "تأكيد",
-      cancel: "إلغاء",
-      noBookings: "لم يتم العثور على حجوزات.",
-      cancelBookingTitle: "إلغاء الحجز",
-      cancelReasonDesc: "يرجى ذكر سبب الإلغاء.",
-      reasonPlaceholder: "سبب الإلغاء...",
-      confirmCancel: "تأكيد إلغاء الحجز",
-    },
-    payments: {
-      title: "لوحة المدفوعات",
-      searchPlaceholder: "البحث في المدفوعات باسم السائح أو الحجز...",
-      id: "معرف الدفع",
-      tourist: "السائح",
-      bookingId: "معرف الحجز",
-      amount: "المبلغ",
-      status: "الحالة",
-      actions: "الإجراءات",
-      refund: "استرداد",
-      noPayments: "لم يتم العثور على مدفوعات.",
-      refundTitle: "استرداد المدفوعات",
-      refundDesc: "أدخل تفاصيل الاسترداد أدناه.",
-      reasonLabel: "سبب الاسترداد",
-      reasonPlaceholder: "مثال: ألغى السائح الطلب",
-      amountLabel: "المبلغ (اختياري، الافتراضي هو كامل المبلغ)",
-      confirmRefund: "تأكيد عملية الاسترداد",
-      refundSuccess: "تمت عملية الاسترداد بنجاح!",
-      refundFailed: "فشلت عملية الاسترداد.",
-    },
-    reviews: {
-      title: "إدارة التقييمات",
-      selectPlace: "اختر مكاناً لعرض التقييمات:",
-      allPlaces: "-- اختر مكاناً --",
-      noReviews: "لم يتم العثور على تقييمات لهذا المكان.",
-      id: "المعرف",
-      rating: "التقييم",
-      comment: "التعليق",
-      actions: "الإجراءات",
-      delete: "حذف",
-    },
-    nationalities: {
-      title: "إدارة الجنسيات",
-      addNationality: "إضافة جنسية",
-      editNationality: "تعديل الجنسية",
-      nameEn: "الاسم (بالانجليزية)",
-      nameAr: "الاسم (بالعربية)",
-      actions: "الإجراءات",
-      edit: "تعديل",
-      delete: "حذف",
-      noNationalities: "لم يتم العثور على جنسيات.",
-    },
-    roles: {
-      title: "إدارة الأدوار",
-      addRole: "إضافة دور",
-      name: "اسم الدور",
-      actions: "الإجراءات",
-      delete: "حذف",
-      noRoles: "لم يتم العثور على أدوار.",
-    },
-    notifications: {
-      title: "إشعارات النظام",
-      sendNotification: "إرسال إشعار عام للكل",
-      notifTitle: "عنوان الإشعار",
-      content: "محتوى الرسالة",
-      send: "إرسال الإشعار",
-      sending: "جاري الإرسال...",
-      actions: "الإجراءات",
-      delete: "حذف",
-      noNotifications: "لم يتم العثور على إشعارات.",
-    },
-    common: {
-      loading: "جاري تحميل البيانات، يرجى الانتظار...",
-      error: "حدث خطأ: ",
-      noData: "لا توجد بيانات متاحة.",
-      success: "تمت العملية بنجاح!",
-    }
-  }
-};
-
-// --- DATA UTILITIES ---
-function extractArray(payload) {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.items)) return payload.items;
-  if (Array.isArray(payload?.data)) return payload.data;
-  return [];
-}
-
-function formatAmount(value, language) {
-  const amount = Number(value);
-  return new Intl.NumberFormat(language === "ar" ? "ar-EG" : "en-EG", {
-    style: "currency",
-    currency: "EGP",
-    maximumFractionDigits: 0,
-  }).format(Number.isFinite(amount) ? amount : 0);
-}
-
-// --- SUB-COMPONENTS ---
-function Badge({ status }) {
-  const val = String(status || "Pending");
-  const tone = val.toLowerCase().includes("cancel") || val.toLowerCase().includes("reject")
-    ? { background: `${COLORS.danger}20`, color: COLORS.danger, border: `1px solid ${COLORS.danger}40` }
-    : val.toLowerCase().includes("paid") || val.toLowerCase().includes("confirm") || val.toLowerCase().includes("approve") || val.toLowerCase().includes("active")
-      ? { background: `${COLORS.success}20`, color: COLORS.success, border: `1px solid ${COLORS.success}40` }
-      : { background: `${COLORS.warning}20`, color: COLORS.warning, border: `1px solid ${COLORS.warning}40` };
-
-  return (
-    <span
-      className="rounded-full px-2.5 py-0.5 text-xs font-bold tracking-wide"
-      style={tone}
-    >
-      {val}
-    </span>
-  );
-}
-
-function ActionBtn({ label, color, onClick, disabled, small }) {
-  const [hover, setHover] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        background: hover ? color : `${color}15`,
-        color: hover ? "#fff" : color,
-        border: `1px solid ${color}40`,
-        borderRadius: 8,
-        padding: small ? "4px 10px" : "6px 14px",
-        fontSize: small ? 11 : 12,
-        fontWeight: 700,
-        cursor: "pointer",
-        transition: "all 0.15s",
-        whiteSpace: "nowrap",
-        opacity: disabled ? 0.5 : 1,
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
-function SearchBar({ placeholder, value, onChange }) {
-  return (
-    <div className="relative flex-1">
-      <span className="absolute top-1/2 -translate-y-1/2 text-lg text-[#9a8468] left-3 rtl:right-3 rtl:left-auto">
-        {icons.search}
-      </span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder || "Search..."}
-        className="w-full rounded-xl bg-[#2e2318] border border-[#3d2e1e] py-2 px-3 text-[#f5ecd7] text-sm outline-none pl-10 pr-4 rtl:pr-10 rtl:pl-4 transition duration-200 focus:border-[#c8860a]"
-      />
-    </div>
-  );
-}
-
-function SectionHeader({ title, action }) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-      <h2
-        className="m-0 text-2xl font-black text-[#f5ecd7] tracking-tight"
-        style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}
-      >
-        {title}
-      </h2>
-      {action}
-    </div>
-  );
-}
-
-function Table({ columns, data, renderRow, language }) {
-  return (
-    <div className="overflow-x-auto w-full rounded-xl border border-[#3d2e1e] bg-[#231c15]">
-      <table className="w-full border-collapse min-w-[600px]">
-        <thead>
-          <tr className="border-b border-[#3d2e1e]">
-            {columns.map((col, idx) => (
-              <th
-                key={idx}
-                className="py-3 px-4 text-xs font-bold text-[#9a8468] uppercase tracking-wider text-left rtl:text-right"
-              >
-                {col}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-[#3d2e1e]/40">
-          {data.map((row, i) => (
-            <tr
-              key={i}
-              className="transition duration-100 hover:bg-[#2e2318]"
-            >
-              {renderRow(row, i)}
-            </tr>
-          ))}
-          {data.length === 0 && (
-            <tr>
-              <td colSpan={columns.length} className="py-12 text-center text-sm text-[#9a8468] font-semibold">
-                {language === "ar" ? "لا توجد سجلات متاحة." : "No records available."}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function Td({ children, muted }) {
-  return (
-    <td
-      className="py-3 px-4 text-sm font-semibold whitespace-nowrap"
-      style={{ color: muted ? COLORS.textMuted : COLORS.text }}
-    >
-      {children}
-    </td>
-  );
-}
+import { extractArray } from "../../../../shared/utils/api-shapes";
+import { formatAmount } from "../../../../shared/utils/money";
+import { COLORS, icons } from "../../../../features/admin/adminDashboardTokens";
+import { ActionBtn, AdminSidebar, Badge, SearchBar, SectionHeader, Table, Td } from "../../../../features/admin/adminDashboardUi";
 
 // === MAIN ADMIN CONSOLE ===
 export default function AdminDashboard() {
-  const { isRTL, language } = useLanguage();
+  const { isRTL, language, t } = useLanguage();
   const { user, logout } = useAuth();
 
   const [page, setPage] = useState("dashboard");
@@ -717,8 +86,7 @@ export default function AdminDashboard() {
 
   const [notifForm, setNotifForm] = useState({ title: "", content: "" });
 
-  // Get active translations
-  const tAdmin = localT[language] || localT.en;
+  const tAdmin = t("admin");
 
   const showSuccess = (msg) => {
     setSuccessMsg(msg);
@@ -726,7 +94,7 @@ export default function AdminDashboard() {
   };
 
   // --- API OPERATIONS ---
-  const loadAllData = async () => {
+  const loadAllData = useCallback(async () => {
     setIsLoading(true);
     setError("");
     try {
@@ -765,32 +133,37 @@ export default function AdminDashboard() {
       setRoles(resRoles);
       setNotifications(resNotifs);
     } catch (err) {
-      setError(err?.message || "Failed to load system data.");
+      setError(err?.message || tAdmin.messages.loadSystemFailed);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [tAdmin.messages.loadSystemFailed]);
 
   useEffect(() => {
-    loadAllData();
-  }, []);
+    const timeoutId = window.setTimeout(() => {
+      loadAllData();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [loadAllData]);
 
   // Fetch reviews when a place is chosen
   useEffect(() => {
     if (!selectedPlaceReviewsId) {
-      setReviewsList([]);
-      return;
+      const timeoutId = window.setTimeout(() => {
+        setReviewsList([]);
+      }, 0);
+      return () => window.clearTimeout(timeoutId);
     }
     const loadReviews = async () => {
       try {
         const res = await tourismApi.getPlaceReviews(selectedPlaceReviewsId).then(extractArray);
         setReviewsList(res);
       } catch (err) {
-        setError(err?.message || "Failed to load place reviews.");
+        setError(err?.message || tAdmin.messages.loadReviewsFailed);
       }
     };
     loadReviews();
-  }, [selectedPlaceReviewsId]);
+  }, [selectedPlaceReviewsId, tAdmin.messages.loadReviewsFailed]);
 
   // Handle Guide Approve
   const handleApproveGuide = async (id) => {
@@ -798,10 +171,10 @@ export default function AdminDashboard() {
     setError("");
     try {
       await tourismApi.approveGuide(id);
-      showSuccess("Guide application approved successfully!");
+      showSuccess(tAdmin.messages.approveGuideSuccess);
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Approving guide failed.");
+      setError(err?.message || tAdmin.messages.approveGuideFailed);
     } finally {
       setActionLoading(false);
     }
@@ -814,12 +187,12 @@ export default function AdminDashboard() {
     setError("");
     try {
       await tourismApi.rejectGuide(rejectGuideId, { reason: rejectionReason });
-      showSuccess("Guide application rejected.");
+      showSuccess(tAdmin.messages.rejectGuideSuccess);
       setRejectGuideId(null);
       setRejectionReason("");
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Rejecting guide failed.");
+      setError(err?.message || tAdmin.messages.rejectGuideFailed);
     } finally {
       setActionLoading(false);
     }
@@ -831,10 +204,10 @@ export default function AdminDashboard() {
     setError("");
     try {
       await tourismApi.suspendGuide(id);
-      showSuccess("Guide suspended.");
+      showSuccess(tAdmin.messages.suspendGuideSuccess);
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Suspending guide failed.");
+      setError(err?.message || tAdmin.messages.suspendGuideFailed);
     } finally {
       setActionLoading(false);
     }
@@ -842,15 +215,15 @@ export default function AdminDashboard() {
 
   // Handle Delete User
   const handleDeleteUser = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    if (!window.confirm(tAdmin.messages.confirmDeleteUser)) return;
     setActionLoading(true);
     setError("");
     try {
       await tourismApi.deleteUserById(id);
-      showSuccess("User deleted successfully.");
+      showSuccess(tAdmin.messages.deleteUserSuccess);
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Deleting user failed.");
+      setError(err?.message || tAdmin.messages.deleteUserFailed);
     } finally {
       setActionLoading(false);
     }
@@ -863,27 +236,12 @@ export default function AdminDashboard() {
     setError("");
     try {
       await tourismApi.assignUserRole(assignRoleUserId, selectedRoleName);
-      showSuccess("Role assigned successfully.");
+      showSuccess(tAdmin.messages.assignRoleSuccess);
       setAssignRoleUserId(null);
       setSelectedRoleName("");
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Assigning role failed.");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // Handle Remove Role
-  const handleRemoveRole = async (userId, roleName) => {
-    setActionLoading(true);
-    setError("");
-    try {
-      await tourismApi.removeUserRole(userId, roleName);
-      showSuccess("Role removed.");
-      loadAllData();
-    } catch (err) {
-      setError(err?.message || "Removing role failed.");
+      setError(err?.message || tAdmin.messages.assignRoleFailed);
     } finally {
       setActionLoading(false);
     }
@@ -932,15 +290,15 @@ export default function AdminDashboard() {
     try {
       if (placeModal === "add") {
         await tourismApi.createPlace(formData);
-        showSuccess("Place added successfully!");
+        showSuccess(tAdmin.messages.placeAdded);
       } else {
         await tourismApi.updatePlace(placeModal.id, formData);
-        showSuccess("Place updated successfully!");
+        showSuccess(tAdmin.messages.placeUpdated);
       }
       setPlaceModal(null);
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Failed to save place.");
+      setError(err?.message || tAdmin.messages.savePlaceFailed);
     } finally {
       setActionLoading(false);
     }
@@ -948,15 +306,15 @@ export default function AdminDashboard() {
 
   // Handle Delete Place
   const handleDeletePlace = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this place?")) return;
+    if (!window.confirm(tAdmin.messages.confirmDeletePlace)) return;
     setActionLoading(true);
     setError("");
     try {
       await tourismApi.deletePlace(id);
-      showSuccess("Place deleted.");
+      showSuccess(tAdmin.messages.deletePlaceSuccess);
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Failed to delete place.");
+      setError(err?.message || tAdmin.messages.deletePlaceFailed);
     } finally {
       setActionLoading(false);
     }
@@ -985,7 +343,7 @@ export default function AdminDashboard() {
 
     try {
       await tourismApi.createTrip(payload);
-      showSuccess("Trip created successfully!");
+      showSuccess(tAdmin.messages.tripCreated);
       setTripModal(false);
       setTripForm({
         title: "", titleAr: "", description: "", descriptionAr: "",
@@ -994,7 +352,7 @@ export default function AdminDashboard() {
       });
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Failed to create trip.");
+      setError(err?.message || tAdmin.messages.createTripFailed);
     } finally {
       setActionLoading(false);
     }
@@ -1002,15 +360,15 @@ export default function AdminDashboard() {
 
   // Handle Delete Trip
   const handleDeleteTrip = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this trip departure plan?")) return;
+    if (!window.confirm(tAdmin.messages.confirmDeleteTrip)) return;
     setActionLoading(true);
     setError("");
     try {
       await tourismApi.deleteTrip(id);
-      showSuccess("Trip departure plan deleted.");
+      showSuccess(tAdmin.messages.deleteTripSuccess);
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Failed to delete trip.");
+      setError(err?.message || tAdmin.messages.deleteTripFailed);
     } finally {
       setActionLoading(false);
     }
@@ -1018,15 +376,15 @@ export default function AdminDashboard() {
 
   // Handle Delete Custom Trip
   const handleDeleteCustomTrip = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this custom tourist plan?")) return;
+    if (!window.confirm(tAdmin.messages.confirmDeleteCustomTrip)) return;
     setActionLoading(true);
     setError("");
     try {
       await tourismApi.deleteCustomTrip(id);
-      showSuccess("Custom plan deleted.");
+      showSuccess(tAdmin.messages.deleteCustomTripSuccess);
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Failed to delete custom plan.");
+      setError(err?.message || tAdmin.messages.deleteCustomTripFailed);
     } finally {
       setActionLoading(false);
     }
@@ -1038,10 +396,10 @@ export default function AdminDashboard() {
     setError("");
     try {
       await tourismApi.confirmBooking(id);
-      showSuccess("Booking confirmed successfully.");
+      showSuccess(tAdmin.messages.confirmBookingSuccess);
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Confirm booking failed.");
+      setError(err?.message || tAdmin.messages.confirmBookingFailed);
     } finally {
       setActionLoading(false);
     }
@@ -1054,12 +412,12 @@ export default function AdminDashboard() {
     setError("");
     try {
       await tourismApi.cancelBooking(cancelBookingId, { reason: cancelReason });
-      showSuccess("Booking cancelled.");
+      showSuccess(tAdmin.messages.cancelBookingSuccess);
       setCancelBookingId(null);
       setCancelReason("");
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Cancel booking failed.");
+      setError(err?.message || tAdmin.messages.cancelBookingFailed);
     } finally {
       setActionLoading(false);
     }
@@ -1093,17 +451,17 @@ export default function AdminDashboard() {
 
   // Handle Delete Review
   const handleDeleteReview = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this review?")) return;
+    if (!window.confirm(tAdmin.messages.confirmDeleteReview)) return;
     setActionLoading(true);
     setError("");
     try {
       await tourismApi.deleteReview(id);
-      showSuccess("Review deleted.");
+      showSuccess(tAdmin.messages.deleteReviewSuccess);
       // Reload reviews for current place
       const res = await tourismApi.getPlaceReviews(selectedPlaceReviewsId).then(extractArray);
       setReviewsList(res);
     } catch (err) {
-      setError(err?.message || "Failed to delete review.");
+      setError(err?.message || tAdmin.messages.deleteReviewFailed);
     } finally {
       setActionLoading(false);
     }
@@ -1117,16 +475,16 @@ export default function AdminDashboard() {
     try {
       if (nationalityModal === "add") {
         await tourismApi.createNationality(nationalityForm);
-        showSuccess("Nationality added.");
+        showSuccess(tAdmin.messages.nationalityAdded);
       } else {
         await tourismApi.updateNationality(nationalityModal.id, nationalityForm);
-        showSuccess("Nationality updated.");
+        showSuccess(tAdmin.messages.nationalityUpdated);
       }
       setNationalityModal(null);
       setNationalityForm({ name: "", nameAr: "" });
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Failed to save nationality.");
+      setError(err?.message || tAdmin.messages.saveNationalityFailed);
     } finally {
       setActionLoading(false);
     }
@@ -1134,15 +492,15 @@ export default function AdminDashboard() {
 
   // Handle Delete Nationality
   const handleDeleteNationality = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this nationality?")) return;
+    if (!window.confirm(tAdmin.messages.confirmDeleteNationality)) return;
     setActionLoading(true);
     setError("");
     try {
       await tourismApi.deleteNationality(id);
-      showSuccess("Nationality deleted.");
+      showSuccess(tAdmin.messages.deleteNationalitySuccess);
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Failed to delete nationality.");
+      setError(err?.message || tAdmin.messages.deleteNationalityFailed);
     } finally {
       setActionLoading(false);
     }
@@ -1156,12 +514,12 @@ export default function AdminDashboard() {
     setError("");
     try {
       await tourismApi.createRole({ name: roleFormName });
-      showSuccess("Role added.");
+      showSuccess(tAdmin.messages.roleAdded);
       setRoleModal(false);
       setRoleFormName("");
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Failed to create role.");
+      setError(err?.message || tAdmin.messages.createRoleFailed);
     } finally {
       setActionLoading(false);
     }
@@ -1169,15 +527,15 @@ export default function AdminDashboard() {
 
   // Handle Delete Role
   const handleDeleteRole = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this system role?")) return;
+    if (!window.confirm(tAdmin.messages.confirmDeleteRole)) return;
     setActionLoading(true);
     setError("");
     try {
       await tourismApi.deleteRole(id);
-      showSuccess("Role deleted.");
+      showSuccess(tAdmin.messages.roleDeleted);
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Failed to delete role.");
+      setError(err?.message || tAdmin.messages.deleteRoleFailed);
     } finally {
       setActionLoading(false);
     }
@@ -1191,11 +549,11 @@ export default function AdminDashboard() {
     setError("");
     try {
       await tourismApi.createNotification(notifForm);
-      showSuccess("System broadcast sent successfully!");
+      showSuccess(tAdmin.messages.notificationSent);
       setNotifForm({ title: "", content: "" });
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Failed to send notification.");
+      setError(err?.message || tAdmin.messages.sendNotificationFailed);
     } finally {
       setActionLoading(false);
     }
@@ -1203,15 +561,15 @@ export default function AdminDashboard() {
 
   // Handle Delete Notification
   const handleDeleteNotification = async (id) => {
-    if (!window.confirm("Are you sure?")) return;
+    if (!window.confirm(tAdmin.messages.confirmDeleteNotification)) return;
     setActionLoading(true);
     setError("");
     try {
       await tourismApi.deleteNotification(id);
-      showSuccess("Notification removed.");
+      showSuccess(tAdmin.messages.notificationRemoved);
       loadAllData();
     } catch (err) {
-      setError(err?.message || "Failed to delete notification.");
+      setError(err?.message || tAdmin.messages.deleteNotificationFailed);
     } finally {
       setActionLoading(false);
     }
@@ -1381,7 +739,7 @@ export default function AdminDashboard() {
                 <div>
                   <h4 className="font-bold text-[#f5ecd7] text-sm m-0">{g.fullName || g.name || g.email}</h4>
                   <p className="text-xs text-[#9a8468] mt-1 font-semibold">{g.email}</p>
-                  <p className="text-[11px] text-[#6b5a45] mt-0.5 font-bold">{tAdmin.guides.licenseNumber.replace("{{number}}", g.licenseNumber || "N/A")}</p>
+                  <p className="text-[11px] text-[#6b5a45] mt-0.5 font-bold">{tAdmin.guides.licenseNumber.replace("{{number}}", g.licenseNumber || tAdmin.common.notAvailable)}</p>
                 </div>
                 <div className="flex gap-2">
                   <ActionBtn label={icons.approve} color={COLORS.success} onClick={() => handleApproveGuide(g.userId || g.id)} small />
@@ -1407,10 +765,10 @@ export default function AdminDashboard() {
                 <div>
                   <h4 className="font-bold text-[#f5ecd7] text-sm m-0">{b.planName || `#${b.planId}`}</h4>
                   <p className="text-xs text-[#9a8468] mt-1 font-semibold">
-                    {language === "ar" ? "السائح" : "Tourist"}: {b.touristName || b.touristEmail}
+                    {tAdmin.bookings.tourist}: {b.touristName || b.touristEmail}
                   </p>
                   <p className="text-xs text-[#6b5a45] mt-0.5 font-bold">
-                    {language === "ar" ? "المرشد" : "Guide"}: {b.guideName || tAdmin.dashboard.unassigned}
+                    {tAdmin.bookings.guide}: {b.guideName || tAdmin.dashboard.unassigned}
                   </p>
                 </div>
                 <div className="text-right">
@@ -1480,10 +838,10 @@ export default function AdminDashboard() {
                 </div>
                 <div className="space-y-1.5 bg-[#2e2318]/40 p-3 rounded-xl border border-[#3d2e1e]/30 mb-4">
                   <p className="text-xs text-[#9a8468] font-bold">
-                    {language === "ar" ? "رقم الهاتف" : "Phone"}: <span className="text-[#f5ecd7]">{g.phoneNumber || "N/A"}</span>
+                    {tAdmin.guides.phone}: <span className="text-[#f5ecd7]">{g.phoneNumber || tAdmin.common.notAvailable}</span>
                   </p>
                   <p className="text-xs text-[#9a8468] font-bold">
-                    {tAdmin.guides.license}: <span className="text-[#f5ecd7]">{g.licenseNumber || "N/A"}</span>
+                    {tAdmin.guides.license}: <span className="text-[#f5ecd7]">{g.licenseNumber || tAdmin.common.notAvailable}</span>
                   </p>
                 </div>
               </div>
@@ -1530,7 +888,7 @@ export default function AdminDashboard() {
       </div>
 
       <Table
-        language={language}
+        emptyLabel={tAdmin.common.noRecords}
         columns={[tAdmin.users.user, tAdmin.users.role, tAdmin.users.joined, tAdmin.users.actions]}
         data={filteredUsers}
         renderRow={(u) => [
@@ -1547,11 +905,11 @@ export default function AdminDashboard() {
           </Td>,
           <Td key="role">
             <span className="font-bold text-[#e8a830] text-xs uppercase tracking-wide">
-              {u.role || u.userRole || "Tourist"}
+              {u.role || u.userRole || tAdmin.rolesOptions.tourist}
             </span>
           </Td>,
           <Td key="joined" muted>
-            {u.birthDate ? new Date(u.birthDate).toLocaleDateString(language === "ar" ? "ar-EG" : "en-US") : "N/A"}
+            {u.birthDate ? new Date(u.birthDate).toLocaleDateString(language === "ar" ? "ar-EG" : "en-US") : tAdmin.common.notAvailable}
           </Td>,
           <Td key="actions">
             <div className="flex gap-2">
@@ -1615,7 +973,7 @@ export default function AdminDashboard() {
       </div>
 
       <Table
-        language={language}
+        emptyLabel={tAdmin.common.noRecords}
         columns={[tAdmin.places.place, tAdmin.places.city, tAdmin.places.price, tAdmin.places.actions]}
         data={filteredPlaces}
         renderRow={(p) => [
@@ -1712,7 +1070,7 @@ export default function AdminDashboard() {
 
         {tripTab === "ready" ? (
           <Table
-            language={language}
+        emptyLabel={tAdmin.common.noRecords}
             columns={[tAdmin.trips.trip, tAdmin.trips.price, tAdmin.trips.duration, tAdmin.trips.actions]}
             data={filteredTrips}
             renderRow={(t) => [
@@ -1746,7 +1104,7 @@ export default function AdminDashboard() {
           />
         ) : (
           <Table
-            language={language}
+        emptyLabel={tAdmin.common.noRecords}
             columns={[tAdmin.trips.trip, tAdmin.bookings.tourist, tAdmin.trips.actions]}
             data={customTrips}
             renderRow={(ct) => [
@@ -1755,11 +1113,11 @@ export default function AdminDashboard() {
                   <p className="font-bold text-[#f5ecd7] text-sm m-0">
                     {language === "ar" ? (ct.titleAr || ct.title) : ct.title}
                   </p>
-                  <p className="text-xs text-[#9a8468] mt-0.5">Destination: {ct.destination}</p>
+                  <p className="text-xs text-[#9a8468] mt-0.5">{tAdmin.trips.destination}: {ct.destination}</p>
                 </div>
               </Td>,
               <Td key="tourist" muted>
-                {ct.touristName || ct.touristEmail || "Tourist"}
+                {ct.touristName || ct.touristEmail || tAdmin.rolesOptions.tourist}
               </Td>,
               <Td key="actions">
                 <ActionBtn label={tAdmin.trips.delete} color={COLORS.danger} onClick={() => handleDeleteCustomTrip(ct.id)} small />
@@ -1781,7 +1139,7 @@ export default function AdminDashboard() {
       </div>
 
       <Table
-        language={language}
+        emptyLabel={tAdmin.common.noRecords}
         columns={[tAdmin.bookings.id, tAdmin.bookings.tourist, tAdmin.bookings.trip, tAdmin.bookings.amount, tAdmin.bookings.status, tAdmin.bookings.actions]}
         data={filteredBookings}
         renderRow={(b) => [
@@ -1824,7 +1182,7 @@ export default function AdminDashboard() {
       </div>
 
       <Table
-        language={language}
+        emptyLabel={tAdmin.common.noRecords}
         columns={[tAdmin.payments.bookingId, tAdmin.payments.tourist, tAdmin.payments.amount, tAdmin.payments.status, tAdmin.payments.actions]}
         data={paidBookings}
         renderRow={(p) => [
@@ -1870,7 +1228,7 @@ export default function AdminDashboard() {
       </div>
 
       <Table
-        language={language}
+        emptyLabel={tAdmin.common.noRecords}
         columns={[tAdmin.reviews.id, tAdmin.reviews.rating, tAdmin.reviews.comment, tAdmin.reviews.actions]}
         data={reviewsList}
         renderRow={(r) => [
@@ -1908,8 +1266,8 @@ export default function AdminDashboard() {
       />
 
       <Table
-        language={language}
-        columns={["ID", tAdmin.nationalities.nameEn, tAdmin.nationalities.nameAr, tAdmin.nationalities.actions]}
+        emptyLabel={tAdmin.common.noRecords}
+        columns={[tAdmin.reviews.id, tAdmin.nationalities.nameEn, tAdmin.nationalities.nameAr, tAdmin.nationalities.actions]}
         data={nationalities}
         renderRow={(n) => [
           <Td key="id" muted>{n.id}</Td>,
@@ -1945,11 +1303,11 @@ export default function AdminDashboard() {
       />
 
       <Table
-        language={language}
-        columns={["ID", tAdmin.roles.name, tAdmin.roles.actions]}
+        emptyLabel={tAdmin.common.noRecords}
+        columns={[tAdmin.reviews.id, tAdmin.roles.name, tAdmin.roles.actions]}
         data={roles}
         renderRow={(r) => [
-          <Td key="id" muted>{r.id || "N/A"}</Td>,
+          <Td key="id" muted>{r.id || tAdmin.common.notAvailable}</Td>,
           <Td key="name"><span className="font-bold text-[#e8a830] text-sm uppercase">{r.name}</span></Td>,
           <Td key="actions">
             <ActionBtn label={tAdmin.roles.delete} color={COLORS.danger} onClick={() => handleDeleteRole(r.id || r.name)} small />
@@ -2005,7 +1363,7 @@ export default function AdminDashboard() {
         {/* Existing announcements lists */}
         <div className="rounded-2xl border border-[#3d2e1e] bg-[#231c15] p-6 shadow-xl">
           <h3 className="text-lg font-black text-[#f5ecd7] mb-4 border-b border-[#3d2e1e]/60 pb-2">
-            {language === "ar" ? "الإشعارات المرسلة" : "Sent Broadcasts"}
+            {tAdmin.notifications.sentBroadcasts}
           </h3>
           <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
             {notifications.map(n => (
@@ -2043,99 +1401,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // --- RENDERING MAIN LAYOUT ---
-  const Sidebar = ({ mobile }) => (
-    <div
-      className="flex flex-col h-full bg-[#231c15] overflow-y-auto"
-      style={{
-        width: mobile ? "100%" : 240,
-        height: mobile ? "auto" : "100vh",
-        borderRight: isRTL ? "none" : `1px solid ${COLORS.border}`,
-        borderLeft: isRTL ? `1px solid ${COLORS.border}` : "none",
-      }}
-    >
-      {/* Brand logo header */}
-      <div className="p-5 border-b border-[#3d2e1e] flex items-center justify-between">
-        <div>
-          <h1
-            className="text-xl font-black text-[#c8860a] tracking-tight"
-            style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}
-          >
-            {tAdmin.sidebar.title}
-          </h1>
-          <p className="text-[10px] text-[#9a8468] font-bold uppercase tracking-widest mt-0.5">
-            {tAdmin.sidebar.subtitle}
-          </p>
-        </div>
-        {mobile && (
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="text-[#9a8468] text-xl font-semibold cursor-pointer border-none bg-none"
-          >
-            {icons.close}
-          </button>
-        )}
-      </div>
-
-      {/* Navigation options list */}
-      <nav className="flex-1 p-3 space-y-1">
-        {navItems.map(item => (
-          <button
-            key={item.id}
-            onClick={() => {
-              setPage(item.id);
-              if (mobile) setSidebarOpen(false);
-            }}
-            className="w-full flex items-center gap-3 py-2.5 px-3 rounded-lg border-none transition duration-150 relative text-left rtl:text-right cursor-pointer"
-            style={{
-              background: page === item.id ? `${COLORS.primary}20` : "transparent",
-              color: page === item.id ? COLORS.primary : COLORS.textMuted,
-              fontWeight: page === item.id ? 800 : 600,
-              fontSize: 13,
-            }}
-          >
-            <span className="text-base w-5 text-center">{item.icon}</span>
-            <span className="flex-1">{item.label}</span>
-            {item.badge > 0 && (
-              <span className="rounded-full bg-[#c0392b] text-white text-[10px] font-black px-2 py-0.5">
-                {item.badge}
-              </span>
-            )}
-            {page === item.id && (
-              <span
-                className="absolute top-2 bottom-2 w-1 rounded bg-[#c8860a]"
-                style={{
-                  left: isRTL ? "auto" : 0,
-                  right: isRTL ? 0 : "auto"
-                }}
-              />
-            )}
-          </button>
-        ))}
-      </nav>
-
-      {/* Bottom Profile logout bar */}
-      <div className="p-4 border-t border-[#3d2e1e]">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#2e2318] mb-3">
-          <div className="w-9 h-9 rounded-full bg-[#c8860a]/35 flex items-center justify-center font-black text-sm text-[#e8a830]">
-            {(user?.name || "A")[0].toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h4 className="text-xs font-bold text-[#f5ecd7] truncate m-0">{user?.name || "Admin"}</h4>
-            <p className="text-[10px] text-[#9a8468] mt-0.5 truncate">{user?.type || tAdmin.sidebar.superAdmin}</p>
-          </div>
-        </div>
-        <button
-          onClick={logout}
-          className="w-full flex items-center gap-2 py-2 px-3 rounded-lg border-none text-[#c0392b] bg-[#c0392b]/10 hover:bg-[#c0392b] hover:text-white transition duration-150 text-xs font-bold uppercase cursor-pointer"
-        >
-          <span>{icons.logout}</span>
-          <span>{tAdmin.sidebar.logout}</span>
-        </button>
-      </div>
-    </div>
-  );
-
   return (
     <div
       className="min-h-screen bg-[#1a1410] text-[#f5ecd7]"
@@ -2154,7 +1419,16 @@ export default function AdminDashboard() {
       <div className="flex flex-row rtl:flex-row-reverse">
         {/* Desktop Sidebar Panel */}
         <div className="hidden md:block shrink-0 w-60 h-screen sticky top-0">
-          <Sidebar />
+          <AdminSidebar
+            isRTL={isRTL}
+            tAdmin={tAdmin}
+            navItems={navItems}
+            page={page}
+            setPage={setPage}
+            setSidebarOpen={setSidebarOpen}
+            user={user}
+            logout={logout}
+          />
         </div>
 
         {/* Mobile slide drawer overlay */}
@@ -2167,7 +1441,17 @@ export default function AdminDashboard() {
               onClick={(e) => e.stopPropagation()}
               className="w-72 h-full bg-[#231c15] animate-slide-in"
             >
-              <Sidebar mobile />
+              <AdminSidebar
+                mobile
+                isRTL={isRTL}
+                tAdmin={tAdmin}
+                navItems={navItems}
+                page={page}
+                setPage={setPage}
+                setSidebarOpen={setSidebarOpen}
+                user={user}
+                logout={logout}
+              />
             </div>
           </div>
         )}
@@ -2267,9 +1551,9 @@ export default function AdminDashboard() {
               className="w-full rounded-xl bg-[#2e2318] border border-[#3d2e1e] p-3 text-[#f5ecd7] text-sm outline-none transition focus:border-[#c8860a]"
             >
               <option value="">-- Choose Role --</option>
-              <option value="Tourist">Tourist</option>
-              <option value="Guide">Guide</option>
-              <option value="Admin">Admin</option>
+              <option value="Tourist">{tAdmin.rolesOptions.tourist}</option>
+              <option value="Guide">{tAdmin.rolesOptions.guide}</option>
+              <option value="Admin">{tAdmin.rolesOptions.admin}</option>
             </select>
 
             <div className="flex justify-end gap-3 mt-5">
@@ -2404,7 +1688,7 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-[#9a8468]">Duration (Span)</label>
+                  <label className="text-xs font-bold text-[#9a8468]">{tAdmin.places.durationSpan}</label>
                   <input
                     value={placeForm.averageVisitDuration}
                     onChange={(e) => setPlaceForm(prev => ({ ...prev, averageVisitDuration: e.target.value }))}
@@ -2414,7 +1698,7 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-[#9a8468]">Hours (Opening/Closing)</label>
+                  <label className="text-xs font-bold text-[#9a8468]">{tAdmin.places.openingClosingHours}</label>
                   <div className="flex gap-1">
                     <input
                       value={placeForm.openingTime}
@@ -2771,7 +2055,7 @@ export default function AdminDashboard() {
                   value={roleFormName}
                   onChange={(e) => setRoleFormName(e.target.value)}
                   required
-                  placeholder="e.g. Moderator"
+                  placeholder={tAdmin.rolesOptions.placeholder}
                   className="rounded-xl bg-[#2e2318] border border-[#3d2e1e] p-3 text-[#f5ecd7] text-sm outline-none transition focus:border-[#c8860a]"
                 />
               </div>

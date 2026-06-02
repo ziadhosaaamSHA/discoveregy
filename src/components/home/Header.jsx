@@ -22,7 +22,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useBookmarks } from "../../context/BookmarksContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { tourismApi } from "../../services/tourism-api";
-import { Modal } from "../common/Modal";
+import { ConfirmModal } from "../shared";
 
 const overlayVariants = {
   hidden: { opacity: 0 },
@@ -575,32 +575,15 @@ export default function Header() {
         )}
       </AnimatePresence>
 
-      <Modal
+      <ConfirmModal
         isOpen={isSignoutModalOpen}
-        onClose={() => setIsSignoutModalOpen(false)}
         title={t("common.signoutConfirmTitle") || "Sign out?"}
-        maxWidth="max-w-md"
-      >
-        <p className="text-gray-600 text-lg mb-8">
-          {t("common.signoutConfirmBody") || "Are you sure you want to sign out of your account?"}
-        </p>
-        <div className="flex items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsSignoutModalOpen(false)}
-            className="px-6 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors"
-          >
-            {t("common.cancel") || "Cancel"}
-          </button>
-          <button
-            type="button"
-            onClick={confirmSignout}
-            className="px-6 py-3 rounded-2xl bg-[#d43e0b] text-white font-bold hover:brightness-110 transition-all"
-          >
-            {t("common.logout") || "Log out"}
-          </button>
-        </div>
-      </Modal>
+        message={t("common.signoutConfirmBody") || "Are you sure you want to sign out of your account?"}
+        cancelLabel={t("common.cancel") || "Cancel"}
+        confirmLabel={t("common.logout") || "Log out"}
+        onCancel={() => setIsSignoutModalOpen(false)}
+        onConfirm={confirmSignout}
+      />
     </>
   );
 }
