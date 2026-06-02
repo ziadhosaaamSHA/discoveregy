@@ -13,3 +13,4 @@ dist/
 discoveregybyclaude
 .DS_Store
 **/.DS_Store
+/src/services/README.md

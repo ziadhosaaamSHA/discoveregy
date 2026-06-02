@@ -1,43 +1,39 @@
-const DEFAULT_API_BASE_URL =
-  "https://tourism-api-sha-e7g5guagcdc2dddv.westeurope-01.azurewebsites.net";
+import {
+  clearAuthTokens,
+  getAccessToken,
+  getActiveAuthRole,
+  getRefreshToken,
+  isApiCacheEnabled,
+  parseResponse,
+  readApiCache,
+  readTokensFromPayload,
+  setApiCache,
+  setAuthTokens,
+  toUrl,
+} from "./client";
 
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "" : DEFAULT_API_BASE_URL)
-).replace(/\/+$/, "");
-
-const API_ASSET_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL
-).replace(/\/+$/, "");
-
-const ACCESS_TOKEN_KEY = "degy_access_token";
-const REFRESH_TOKEN_KEY = "degy_refresh_token";
-const AUTH_ROLE_KEY = "degy_auth_role";
-const ROLE_KEYS = ["tourist", "guide", "admin"];
+// Compatibility surface:
+// Many pages still import token helpers and asset URL helpers from api-client.js.
+// Keep these exports stable even though their implementations now live in src/services/client.
+export {
+  clearApiCache,
+  clearAuthTokens,
+  getAccessToken,
+  getActiveAuthRole,
+  getRefreshToken,
+  resolveApiAssetUrl,
+  setActiveAuthRole,
+  setApiCache,
+  setAuthTokens,
+  unwrapPayload,
+} from "./client";
 
 let refreshPromise = null;
 
-function normalizeRole(value) {
-  const normalized = String(value || "").trim().toLowerCase();
-  return ROLE_KEYS.includes(normalized) ? normalized : null;
-}
-
-function getRoleTokenKey(baseKey, role) {
-  return `${baseKey}_${role}`;
-}
-
-export function getActiveAuthRole() {
-  return normalizeRole(localStorage.getItem(AUTH_ROLE_KEY));
-}
-
-export function setActiveAuthRole(role) {
-  const normalizedRole = normalizeRole(role);
-  if (!normalizedRole) {
-    localStorage.removeItem(AUTH_ROLE_KEY);
-    return;
-  }
-  localStorage.setItem(AUTH_ROLE_KEY, normalizedRole);
-}
-
+/**
+ * Standard error thrown by every service request.
+ * UI code can inspect `status` and `data` when it needs backend-specific messaging.
+ */
 export class ApiError extends Error {
   constructor(message, status, data) {
     super(message);
@@ -47,106 +43,12 @@ export class ApiError extends Error {
   }
 }
 
-function toUrl(path) {
-  if (path.startsWith("http")) return path;
-  return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
-}
-
-export function resolveApiAssetUrl(path) {
-  if (typeof path !== "string") return "";
-  const trimmed = path.trim();
-  if (!trimmed) return "";
-  if (trimmed.startsWith("http")) return trimmed;
-  return `${API_ASSET_BASE_URL}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
-}
-
-function parseJsonSafely(text) {
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-}
-
-function readTokensFromPayload(payload) {
-  const source = payload && typeof payload === "object" ? payload : {};
-  const accessToken =
-    source.accessToken ??
-    source.token ??
-    source.jwt ??
-    source.access_token ??
-    source?.data?.accessToken ??
-    source?.data?.token ??
-    null;
-  const refreshToken =
-    source.refreshToken ??
-    source.refresh_token ??
-    source?.data?.refreshToken ??
-    source?.data?.refresh_token ??
-    null;
-
-  return {
-    accessToken: typeof accessToken === "string" ? accessToken : null,
-    refreshToken: typeof refreshToken === "string" ? refreshToken : null,
-  };
-}
-
-export function getAccessToken(role = getActiveAuthRole()) {
-  const normalizedRole = normalizeRole(role);
-  let token = null;
-  if (normalizedRole) {
-    token = localStorage.getItem(getRoleTokenKey(ACCESS_TOKEN_KEY, normalizedRole));
-  }
-  if (!token) {
-    token = localStorage.getItem(ACCESS_TOKEN_KEY);
-  }
-  if (token === "null" || token === "undefined") return null;
-  return token;
-}
-
-export function getRefreshToken(role = getActiveAuthRole()) {
-  const normalizedRole = normalizeRole(role);
-  let token = null;
-  if (normalizedRole) {
-    token = localStorage.getItem(getRoleTokenKey(REFRESH_TOKEN_KEY, normalizedRole));
-  }
-  if (!token) {
-    token = localStorage.getItem(REFRESH_TOKEN_KEY);
-  }
-  if (token === "null" || token === "undefined") return null;
-  return token;
-}
-
-export function setAuthTokens({ accessToken, refreshToken, role }) {
-  const normalizedRole = normalizeRole(role);
-  if (normalizedRole) setActiveAuthRole(normalizedRole);
-  if (accessToken) localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  if (refreshToken) localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  if (normalizedRole && accessToken) {
-    localStorage.setItem(getRoleTokenKey(ACCESS_TOKEN_KEY, normalizedRole), accessToken);
-  }
-  if (normalizedRole && refreshToken) {
-    localStorage.setItem(getRoleTokenKey(REFRESH_TOKEN_KEY, normalizedRole), refreshToken);
-  }
-}
-
-export function clearAuthTokens() {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-  localStorage.removeItem(AUTH_ROLE_KEY);
-  ROLE_KEYS.forEach((role) => {
-    localStorage.removeItem(getRoleTokenKey(ACCESS_TOKEN_KEY, role));
-    localStorage.removeItem(getRoleTokenKey(REFRESH_TOKEN_KEY, role));
-  });
-}
-
-async function parseResponse(response) {
-  const text = await response.text();
-  const json = parseJsonSafely(text);
-  return json ?? text ?? null;
-}
-
+/**
+ * Refreshes the active role's access token.
+ *
+ * `refreshPromise` prevents multiple simultaneous 401 responses from sending
+ * duplicate refresh requests. Every waiting request shares the same refresh result.
+ */
 async function refreshAccessToken() {
   if (refreshPromise) return refreshPromise;
 
@@ -190,6 +92,51 @@ async function refreshAccessToken() {
   }
 }
 
+/**
+ * Builds the browser `fetch` options for one API request.
+ *
+ * This is the only place that decides:
+ * - whether to add the Bearer token,
+ * - whether a payload should be JSON or FormData,
+ * - which default headers every request should include.
+ */
+function buildRequestOptions({ method, headers, body, auth }) {
+  const requestHeaders = { Accept: "application/json", ...headers };
+  const finalOptions = { method, headers: requestHeaders };
+
+  if (auth) {
+    const token = getAccessToken();
+    if (token) requestHeaders.Authorization = `Bearer ${token}`;
+  }
+
+  if (body === undefined) return finalOptions;
+  if (body instanceof FormData) {
+    finalOptions.body = body;
+    return finalOptions;
+  }
+
+  requestHeaders["Content-Type"] = requestHeaders["Content-Type"] || "application/json";
+  finalOptions.body = typeof body === "string" ? body : JSON.stringify(body);
+  return finalOptions;
+}
+
+/**
+ * Reads the most useful backend error field while preserving a fallback message.
+ * Backends often vary between `message`, `title`, `error`, and `detail`.
+ */
+function getErrorMessage(data, status) {
+  return (
+    (data && typeof data === "object" && (data.message || data.title || data.error || data.detail)) ||
+    `Request failed (${status})`
+  );
+}
+
+/**
+ * Internal transport pipeline used by all domain API files.
+ *
+ * It handles cache reads before the network, parses the response body once,
+ * refreshes an expired token once, and converts failed responses into ApiError.
+ */
 async function apiRequestInternal(path, options = {}, retry = true) {
   const {
     method = "GET",
@@ -197,61 +144,11 @@ async function apiRequestInternal(path, options = {}, retry = true) {
     headers = {},
     body,
   } = options;
-  // Caching: opt-in per-request using options.cache when the feature flag is enabled
-  const ENABLE_API_CACHE = import.meta.env.VITE_ENABLE_API_CACHE === "true";
-  const cacheOption = options.cache || false;
 
-  // Simple in-memory cache map: key -> { expiresAt, data }
-  if (!globalThis.__degyApiCache) globalThis.__degyApiCache = new Map();
-  const cacheMap = globalThis.__degyApiCache;
+  const cachedData = readApiCache(path, { method, body, cache: options.cache });
+  if (cachedData !== undefined) return cachedData;
 
-  function makeCacheKey(p, opts) {
-    // Only cache GET requests; include method, url, and body for uniqueness
-    const m = (opts.method || "GET").toUpperCase();
-    let b = "";
-    try {
-      if (opts.body && typeof opts.body === "string") b = opts.body;
-      else if (opts.body && typeof opts.body === "object") b = JSON.stringify(opts.body);
-    } catch {
-      b = String(opts.body || "");
-    }
-    return `${m}::${toUrl(p)}::${b}`;
-  }
-
-  const requestHeaders = { Accept: "application/json", ...headers };
-  const finalOptions = { method, headers: requestHeaders };
-
-  if (auth) {
-    const token = getAccessToken();
-    if (token) {
-      requestHeaders.Authorization = `Bearer ${token}`;
-    }
-  }
-
-  // Try cache for GET requests when enabled and requested
-  const isGet = (method || "GET").toUpperCase() === "GET";
-  const shouldUseCache = ENABLE_API_CACHE && cacheOption && isGet;
-  const cacheKey = shouldUseCache ? makeCacheKey(path, { method, body }) : null;
-  if (shouldUseCache && cacheKey) {
-    const entry = cacheMap.get(cacheKey);
-    if (entry && entry.expiresAt > Date.now()) {
-      return entry.data;
-    }
-  }
-
-  if (body !== undefined) {
-    if (body instanceof FormData) {
-      finalOptions.body = body;
-    } else if (typeof body === "string") {
-      requestHeaders["Content-Type"] = requestHeaders["Content-Type"] || "application/json";
-      finalOptions.body = body;
-    } else {
-      requestHeaders["Content-Type"] = requestHeaders["Content-Type"] || "application/json";
-      finalOptions.body = JSON.stringify(body);
-    }
-  }
-
-  const response = await fetch(toUrl(path), finalOptions);
+  const response = await fetch(toUrl(path), buildRequestOptions({ method, headers, body, auth }));
   const data = await parseResponse(response);
 
   if (!response.ok) {
@@ -265,60 +162,27 @@ async function apiRequestInternal(path, options = {}, retry = true) {
       return apiRequestInternal(path, options, false);
     }
 
-    const message =
-      (data && typeof data === "object" && (data.message || data.title || data.error || data.detail)) ||
-      `Request failed (${response.status})`;
-
-    throw new ApiError(message, response.status, data);
+    throw new ApiError(getErrorMessage(data, response.status), response.status, data);
   }
 
   return data;
 }
 
-// Cache helpers
-export function clearApiCache(keyPrefix) {
-  if (!globalThis.__degyApiCache) return;
-  if (!keyPrefix) {
-    globalThis.__degyApiCache.clear();
-    return;
-  }
-  for (const k of Array.from(globalThis.__degyApiCache.keys())) {
-    if (k.startsWith(keyPrefix)) globalThis.__degyApiCache.delete(k);
-  }
-}
-
-export function setApiCache(path, options, data, ttl = 5 * 60 * 1000) {
-  const cacheMap = globalThis.__degyApiCache || new Map();
-  globalThis.__degyApiCache = cacheMap;
-  const key = `${(options.method || "GET").toUpperCase()}::${toUrl(path)}::${typeof options.body === 'string' ? options.body : JSON.stringify(options.body || {})}`;
-  cacheMap.set(key, { expiresAt: Date.now() + ttl, data });
-}
-
-// Wrap fetch with optional cache set when successful
-const originalApiRequest = apiRequestInternal;
-// We replace exported apiRequest with a wrapper that will set cache entries when requested
+/**
+ * Public request wrapper used by service modules.
+ *
+ * Successful opt-in GET requests are saved to the shared in-memory cache.
+ * Mutating requests are never cached because cache writes are gated by method.
+ */
 export async function apiRequestWithCache(path, options = {}, retry = true) {
-  const res = await originalApiRequest(path, options, retry);
-  try {
-    const ENABLE_API_CACHE = import.meta.env.VITE_ENABLE_API_CACHE === "true";
-    const cacheOption = options.cache || false;
-    const cacheTTL = typeof options.cacheTTL === "number" ? options.cacheTTL : 5 * 60 * 1000;
-    const isGet = (options.method || "GET").toUpperCase() === "GET";
-    if (ENABLE_API_CACHE && cacheOption && isGet) {
-      setApiCache(path, options, res, cacheTTL);
-    }
-  } catch {
-    // ignore cache set errors
+  const response = await apiRequestInternal(path, options, retry);
+  const method = (options.method || "GET").toUpperCase();
+  if (isApiCacheEnabled() && options.cache && method === "GET") {
+    const ttl = typeof options.cacheTTL === "number" ? options.cacheTTL : 5 * 60 * 1000;
+    setApiCache(path, options, response, ttl);
   }
-  return res;
+  return response;
 }
 
-// Re-export apiRequest name used by other modules
+// `apiRequest` is the name used throughout the app; keep it as the public alias.
 export { apiRequestWithCache as apiRequest };
-
-export function unwrapPayload(responseData) {
-  if (!responseData || typeof responseData !== "object") return responseData;
-  if ("data" in responseData) return responseData.data;
-  if ("result" in responseData) return responseData.result;
-  return responseData;
-}

@@ -561,7 +561,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const Sidebar = ({ mobile }) => (
+  const renderSidebar = (mobile = false) => (
     <div style={{
       width: mobile ? "100%" : 240,
       background: COLORS.surface,
@@ -649,14 +649,14 @@ export default function AdminDashboard() {
       <div style={{ display: "flex" }}>
         {/* Desktop Sidebar */}
         <div className="sidebar-desktop" style={{ flexShrink: 0 }}>
-          <Sidebar />
+          {renderSidebar()}
         </div>
 
         {/* Mobile Overlay */}
         {sidebarOpen && (
           <div style={{ position: "fixed", inset: 0, zIndex: 99, background: "#00000088" }} onClick={() => setSidebarOpen(false)}>
             <div onClick={e => e.stopPropagation()} style={{ width: 280, height: "100%", background: COLORS.surface, overflowY: "auto" }}>
-              <Sidebar mobile />
+              {renderSidebar(true)}
             </div>
           </div>
         )}

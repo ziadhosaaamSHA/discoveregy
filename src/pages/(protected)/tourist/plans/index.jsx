@@ -2,13 +2,17 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../../../../context/LanguageContext";
 import * as plansBackend from "./backend/plansBackend";
-import { Modal } from "../../../../components/common/Modal";
 import { BookingSettings } from "./components/BookingSettings";
 import { BookingStatusModal } from "./components/BookingStatusModal";
 import { PlansGrid } from "./components/PlansGrid";
 import { PlansHeader } from "./components/PlansHeader";
 import { RecommendedDestinationBanner } from "./components/RecommendedDestinationBanner";
-import { PaymentConfirmationModal } from "../../../../features/bookings/PaymentConfirmationModal";
+import { Modal, PaymentConfirmationModal } from "../../../../components/ui";
+import {
+  mergeBookingInfo,
+  saveCurrentBookingId,
+  saveCurrentBookingPlan,
+} from "../../../../services/booking-session";
 import {
   extractBookingId,
   formatAmount,
@@ -220,15 +224,8 @@ export default function Plans() {
     if (!bookingToConfirm || isSubmittingBooking) return;
     const { selectedPlan, startDate, endDate, planData } = bookingToConfirm;
 
-    localStorage.setItem("current_booking_plan", JSON.stringify(planData));
-    localStorage.setItem(
-      "user_booking_info",
-      JSON.stringify({
-        ...bookingInfo,
-        startTime,
-        durationHours: parsedDurationHours,
-      })
-    );
+    saveCurrentBookingPlan(planData);
+    mergeBookingInfo({ startTime, durationHours: parsedDurationHours });
     setIsSubmittingBooking(true);
     try {
       const bookingResponse = await plansBackend.createBooking({
@@ -242,7 +239,7 @@ export default function Plans() {
       });
       const bookingId = extractBookingId(bookingResponse);
       if (bookingId) {
-        localStorage.setItem("current_booking_id", String(bookingId));
+        saveCurrentBookingId(bookingId);
         if (mapPaymentMethod(bookingInfo.paymentMethod) === "Visa") {
           await plansBackend.payBooking({ bookingId });
         }

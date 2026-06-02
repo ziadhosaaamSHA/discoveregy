@@ -1,6 +1,7 @@
 import { fetchDestinations } from "../../../../../services/destinations-data";
 import { tourismApi } from "../../../../../services/tourism-api";
-import { extractArray, mapTripToPlan } from "../components/planUtils";
+import { extractArray } from "../../../../../shared/utils/api-shapes";
+import { mapTripToPlan } from "../../../../../services/mappers/trip.mapper";
 
 // Backend helpers for the Plans page. Centralizes API calls and mapping so
 // the React component can remain focused on presentation.

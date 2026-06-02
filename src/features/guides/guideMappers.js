@@ -2,6 +2,7 @@ import { resolveApiAssetUrl } from "../../services/api-client";
 import { extractArray } from "../../shared/utils/api-shapes";
 import { extractNumericId } from "../../shared/utils/ids";
 import { guideSchema } from "../../shared/schemas/guide";
+import { extractConversationId, mapPaymentMethod } from "../../services/mappers/booking.mapper";
 
 function normalizeLanguages(value) {
   if (!Array.isArray(value)) return [];
@@ -40,28 +41,6 @@ export function normalizeGuide(rawGuide) {
   };
 }
 
-export function extractConversationId(payload) {
-  if (typeof payload === "number") return payload;
-  if (typeof payload === "string" && /^\d+$/.test(payload)) return Number(payload);
-  if (!payload || typeof payload !== "object") return null;
-
-  const candidates = [
-    payload.id,
-    payload.conversationId,
-    payload.data?.id,
-    payload.data?.conversationId,
-    payload.result?.id,
-    payload.result?.conversationId,
-  ];
-
-  for (const value of candidates) {
-    if (typeof value === "number") return value;
-    if (typeof value === "string" && /^\d+$/.test(value)) return Number(value);
-  }
-
-  return null;
-}
-
 export function extractBookingId(payload) {
   return extractNumericId(payload);
 }
@@ -81,9 +60,4 @@ export function parseDurationDays(durationValue) {
   return Number.isFinite(days) && days > 0 ? days : 1;
 }
 
-export function mapPaymentMethod(value) {
-  const normalized = String(value || "").toLowerCase();
-  return normalized === "visa" ? "Visa" : "Cash";
-}
-
-export { extractArray };
+export { extractArray, extractConversationId, mapPaymentMethod };

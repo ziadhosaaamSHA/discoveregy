@@ -4,8 +4,8 @@ import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { User, MapPin, Phone, CalendarDays, Wallet } from "lucide-react";
 import { useLanguage } from "../../../../context/LanguageContext";
+import { readBookingInfo, saveBookingInfo } from "../../../../services/booking-session";
 import { InputField } from "./components/InputField";
-import { SuccessModal } from "./components/SuccessModal";
 
 // Pay captures booking details and stores booking context before plan selection.
 export default function PayPage() {
@@ -15,14 +15,7 @@ export default function PayPage() {
 
   const queryParams = new URLSearchParams(location.search);
   const destId = queryParams.get("destId");
-  const savedBookingInfo = (() => {
-    try {
-      const parsed = JSON.parse(localStorage.getItem("user_booking_info") || "{}");
-      return parsed && typeof parsed === "object" ? parsed : {};
-    } catch {
-      return {};
-    }
-  })();
+  const savedBookingInfo = readBookingInfo();
 
   const BookingSchema = Yup.object().shape({
     firstName: Yup.string().min(2, t("validation.nameMin2")).required(t("validation.required")),
@@ -43,9 +36,7 @@ export default function PayPage() {
   };
 
   const handleSubmit = (values, { setSubmitting }) => {
-    console.log("Processing Personal Details:", values);
-    // Save to local storage or state if needed
-    localStorage.setItem("user_booking_info", JSON.stringify({ ...values, numberOfPeople: 1 }));
+    saveBookingInfo({ ...values, numberOfPeople: 1 });
     
     // Redirect to plans with the destination context preserved
     const targetPath = destId ? `/tourist/plans?destId=${destId}` : "/tourist/plans";

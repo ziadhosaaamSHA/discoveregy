@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../../../context/LanguageContext";
-import { SectionHeader } from "../../../../components/common/SectionHeader";
+import { SectionHeader } from "../../../../components/ui";
 import { tourismApi } from "../../../../services/tourism-api";
 import { RequestCard } from "./components/RequestCard";
 

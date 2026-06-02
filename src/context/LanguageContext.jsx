@@ -36,11 +36,14 @@ const TRANSLATIONS = {
       signoutConfirmBody: "Are you sure you want to sign out of your account?",
       points: "Points",
       notifications: "Notifications",
+      loading: "Loading...",
     },
     tourist: {
       home: {
         description: "Manage incoming requests, conversations, and trip updates from one place.",
         noUpcomingTrips: "No upcoming trips.",
+        cancelTripConfirm: "Are you sure you want to cancel this trip?",
+
       },
     },
     hero: {
@@ -219,6 +222,7 @@ const TRANSLATIONS = {
     guide: {
       home: {
         description: "Manage incoming requests, conversations, and trip updates from one place.",
+        noRequests: "No incoming requests at the moment.",
       },
       chats: {
         title: "Chats",
@@ -373,6 +377,7 @@ const TRANSLATIONS = {
       otherTripsTitle: "Other trips",
       matchingTrips: "Matching trips",
       allTrips: "All trips",
+      selectedPlan: "Selected Plan",
     },
     admin: adminTranslations.en,
   },
@@ -406,6 +411,7 @@ const TRANSLATIONS = {
       signoutConfirmBody: "هل أنت متأكد أنك تريد تسجيل الخروج من حسابك؟",
       points: "النقاط",
       notifications: "الإشعارات",
+      loading: "جارٍ التحميل...",
     },
     hero: {
       badge: "أفضل الوجهات حول مصر",
@@ -561,6 +567,7 @@ const TRANSLATIONS = {
       home: {
         description: "قم بإدارة الطلبات الواردة، المحادثات، وتحديثات الرحلات من مكان واحد.",
         noUpcomingTrips: "لا توجد رحلات قادمة.",
+        cancelTripConfirm: "هل أنت متأكد أنك تريد إلغاء هذه الرحلة؟",
       },
     },
     booking: {
@@ -733,6 +740,7 @@ const TRANSLATIONS = {
       otherTripsTitle: "رحلات أخرى",
       matchingTrips: "الرحلات المتطابقة",
       allTrips: "جميع الرحلات",
+      selectedPlan: "الخطة المختارة",
     },
     admin: adminTranslations.ar,
   },

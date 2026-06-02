@@ -6,8 +6,13 @@ import { useAuth } from "../../../../context/AuthContext";
 import { ConversationItem } from "../../../../components/chats/ConversationItem";
 import { ChatDetail } from "../../../../components/chats/ChatDetail";
 import { tourismApi } from "../../../../services/tourism-api";
-import { readStoredConversations, upsertStoredConversation } from "../../../../services/conversations-store";
-import { EmptyState, LoadingState, SearchInput } from "../../../../components/shared";
+import {
+  clearStoredConversations,
+  readStoredConversations,
+  removeStoredConversation,
+  upsertStoredConversation,
+} from "../../../../services/conversations-store";
+import { EmptyState, LoadingState, SearchInput } from "../../../../components/ui";
 import { extractArray } from "../../../../shared/utils/api-shapes";
 import { isFallbackConversationName, readId } from "../../../../shared/utils/identity";
 import {
@@ -156,15 +161,13 @@ export default function Chats() {
   }, [selectedConversation]);
 
   const handleDeleteChat = (id) => {
-    const current = readStoredConversations();
-    const next = current.filter((item) => String(item.id) !== String(id));
-    localStorage.setItem("degy_conversations", JSON.stringify(next));
+    removeStoredConversation(id);
     setConversations((prev) => prev.filter((item) => String(item.id) !== String(id)));
     navigate("/chats");
   };
 
   const handleClearAll = () => {
-    localStorage.removeItem("degy_conversations");
+    clearStoredConversations();
     setConversations([]);
     navigate("/chats");
   };

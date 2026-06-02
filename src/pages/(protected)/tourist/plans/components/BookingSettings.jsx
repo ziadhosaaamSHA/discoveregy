@@ -17,8 +17,6 @@ export function BookingSettings({
   activePlan,
   language,
 }) {
-  const isDurationFilled = durationHours !== '' && durationHours !== null && durationHours !== undefined;
-
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#fbf5ee]/95 backdrop-blur-md border-t border-[#8a4b10]/10 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] py-4 px-6 transition-all duration-300">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
@@ -115,4 +113,3 @@ export function BookingSettings({
     </div>
   );
 }
-

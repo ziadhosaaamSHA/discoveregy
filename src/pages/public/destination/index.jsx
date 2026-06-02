@@ -8,6 +8,7 @@ import { useBookmarks } from "../../../context/BookmarksContext";
 import { useLanguage } from "../../../context/LanguageContext";
 import { tourismApi } from "../../../services/tourism-api";
 import { resolveApiAssetUrl } from "../../../services/api-client";
+import { readPlaceCoordinates } from "../../../services/mappers/place.mapper";
 // Figma back icon
 const imgBackIcon = "/images/back-svgrepo-com 1.svg";
 const DEFAULT_DESTINATION_VIDEO_URL = "https://www.youtube.com/watch?v=mfxQy5A_tHs";
@@ -192,13 +193,6 @@ function getEmbedUrl(url) {
   return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0`;
 }
 
-function readCoordinate(...values) {
-  for (const value of values) {
-    const numeric = Number(value);
-    if (Number.isFinite(numeric)) return numeric;
-  }
-  return null;
-}
   // Prefer API-provided placeDetails when available
   const currentPlaceId = placeDetails?.id
   let name;
@@ -211,8 +205,7 @@ function readCoordinate(...values) {
   }
   const heroImage = resolveApiAssetUrl(placeDetails?.imageUrl);
   const videoButtonLabel = language === "ar" ? "فيديو المكان" : "Place video";
-  const latitude = readCoordinate(placeDetails?.latitude, placeDetails?.Latitude, placeDetails?.lat, placeDetails?.Lat);
-  const longitude = readCoordinate(placeDetails?.longitude, placeDetails?.Longitude, placeDetails?.lng, placeDetails?.Lng);
+  const { latitude, longitude } = readPlaceCoordinates(placeDetails);
   const hasCoordinates = latitude !== null && longitude !== null;
   const handleOpenMap = () => {
     if (!hasCoordinates) return;

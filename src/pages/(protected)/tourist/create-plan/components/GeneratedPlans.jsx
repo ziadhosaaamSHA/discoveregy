@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 
-export default function GeneratedPlans({ generatedPlans, onSelectPlan, isRTL, language, prompt, t }) {
+export default function GeneratedPlans({ generatedPlans, onSelectPlan, isRTL, prompt, t }) {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>

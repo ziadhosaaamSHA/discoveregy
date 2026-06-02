@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Star, MessageCircle, X } from "lucide-react";
 import { useLanguage } from "../../../../context/LanguageContext";
 import { useAuth } from "../../../../context/AuthContext";
-import { Modal } from "../../../../components/common/Modal";
+import { Modal } from "../../../../components/ui";
 import * as homeBackend from "./backend/homeBackend";
 import UpcomingTrips from "./components/UpcomingTrips";
 import ActivitiesSection from "./components/ActivitiesSection";
@@ -181,7 +181,7 @@ export default function TouristHome() {
         maxWidth="max-w-md"
       >
         <p className="text-gray-600 text-lg mb-8">
-          {t("destination.cancelTripConfirm") || "Are you sure you want to cancel this trip?"}
+          {t("tourist.home.cancelTripConfirm") || "Are you sure you want to cancel this trip?"}
         </p>
         <div className="flex items-center justify-center gap-3">
           <button

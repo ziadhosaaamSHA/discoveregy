@@ -3,8 +3,14 @@ import { fetchDestinations } from "./destinations-data";
 const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN;
 const MODEL_NAME = "gpt-4o-mini";
 
+/**
+ * Generates three custom travel-plan suggestions using the configured AI endpoint.
+ *
+ * The model is constrained to real destination ids loaded from the API so generated
+ * plans can be booked and priced by the same backend-backed destination data.
+ */
 export async function generateTravelPlan(prompt, language = 'en') {
-  // Load real destinations from the API (merged with any static fallbacks by the helper)
+  // Load real destinations before prompting so the model cannot invent unsupported places.
   const destinations = await fetchDestinations().catch((err) => {
     console.error("Failed to load destinations for AI prompt:", err);
     return [];
@@ -32,6 +38,7 @@ Prompt: "${prompt}"
 Response format: [{"id": "p1", "title": "...", "description": "...", "destinations": [...]}, ...]`;
 
   try {
+    // The external inference endpoint returns chat-completion content with JSON inside.
     const response = await fetch("https://models.inference.ai.azure.com/chat/completions", {
       method: "POST",
       headers: { 
@@ -48,11 +55,13 @@ Response format: [{"id": "p1", "title": "...", "description": "...", "destinatio
 
     const data = await response.json();
     if (data.choices?.[0]) {
+      // Strip optional markdown code fences before JSON parsing.
       const content = data.choices[0].message.content.trim();
       const jsonString = content.replace(/^```json/, '').replace(/```$/, '');
       const aiPlans = JSON.parse(jsonString);
       
       return aiPlans.map(plan => {
+        // Match generated destination ids back to the real API-backed destination objects.
         const planDestIds = Array.isArray(plan.destinations) ? plan.destinations.map(String) : [];
         const matched = destinations.filter(d => planDestIds.includes(String(d.id)));
         return {
@@ -66,6 +75,7 @@ Response format: [{"id": "p1", "title": "...", "description": "...", "destinatio
     }
     throw new Error("Invalid AI response");
   } catch (err) {
+    // Keep network/token failures readable for the custom-plan UI.
     let errorMessage = "AI Plan Generation Error: " + err.message;
     if (err.message.includes("Failed to fetch") || err.name === "TypeError") {
       errorMessage = "Connection error. Please check your internet or GITHUB_TOKEN.";

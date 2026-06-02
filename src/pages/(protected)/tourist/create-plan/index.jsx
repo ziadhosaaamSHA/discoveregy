@@ -6,50 +6,20 @@ import { motion } from "framer-motion";
 import * as createPlanBackend from "./backend/createPlanBackend";
 import GeneratedPlans from "./components/GeneratedPlans";
 import EditPlan from "./components/EditPlan";
-import { Modal } from "../../../../components/common/Modal";
 import { formatAmount } from "../../../../shared/utils/money";
-import { PaymentConfirmationModal } from "../../../../features/bookings/PaymentConfirmationModal";
-
-function parseBookingDateTime(dateValue, timeValue) {
-  const parsedDate = String(dateValue || "").trim();
-  const parsedTime = String(timeValue || "").trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(parsedDate)) return null;
-  if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(parsedTime)) return null;
-  const result = new Date(`${parsedDate}T${parsedTime}:00`);
-  return Number.isNaN(result.getTime()) ? null : result;
-}
-
-function findIdRecursive(obj, seen = new Set()) {
-  if (!obj || typeof obj !== "object" || seen.has(obj)) return null;
-  seen.add(obj);
-
-  const keys = ["id", "tripId", "bookingId", "value", "data", "result", "trip", "booking"];
-  for (const key of keys) {
-    const val = obj[key];
-    if (val !== undefined && val !== null) {
-      if (typeof val === "number") return val;
-      if (typeof val === "string" && /^\d+$/.test(val)) return Number(val);
-      if (typeof val === "object") {
-        const nested = findIdRecursive(val, seen);
-        if (nested !== null) return nested;
-      }
-    }
-  }
-
-  for (const key in obj) {
-    if (!keys.includes(key)) {
-      const found = findIdRecursive(obj[key], seen);
-      if (found !== null) return found;
-    }
-  }
-  return null;
-}
-
-function extractTripId(payload) {
-  if (typeof payload === "number") return payload;
-  if (typeof payload === "string" && /^\d+$/.test(payload)) return Number(payload);
-  return findIdRecursive(payload);
-}
+import { Modal, PaymentConfirmationModal } from "../../../../components/ui";
+import {
+  clearCurrentBookingId,
+  clearSelectedGuide,
+  getSavedDurationHours,
+  getSavedStartTime,
+  mergeBookingInfo,
+  readBookingInfo,
+  saveCurrentBookingPlan,
+} from "../../../../services/booking-session";
+import { extractTripId } from "../../../../services/mappers/booking.mapper";
+import { readTicketPrice } from "../../../../services/mappers/place.mapper";
+import { parseBookingDateTime } from "../../../../shared/utils/dates";
 
 function createTimeOptions() {
   const options = [];
@@ -66,15 +36,6 @@ function createTimeOptions() {
 }
 
 const TIME_OPTIONS = createTimeOptions();
-
-function readTicketPrice(destination) {
-  const fromTicketPrice = Number(destination?.ticketPrice ?? destination?.TicketPrice);
-  if (Number.isFinite(fromTicketPrice)) return Math.max(0, fromTicketPrice);
-
-  const priceText = String(destination?.price || "");
-  const fromPriceText = Number(priceText.replace(/[^\d.]/g, ""));
-  return Number.isFinite(fromPriceText) ? Math.max(0, fromPriceText) : 0;
-}
 
 // CreatePlan builds a custom travel plan from selected destinations and trip timing.
 export default function CreatePlan() {
@@ -94,30 +55,9 @@ export default function CreatePlan() {
   const [customDestinations, setCustomDestinations] = useState([]);
   const [showAddDestinations, setShowAddDestinations] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [startTime, setStartTime] = useState(() => {
-    try {
-      const savedStartTime = String(JSON.parse(localStorage.getItem("user_booking_info") || "{}")?.startTime || "");
-      return /^([01]\d|2[0-3]):([0-5]\d)$/.test(savedStartTime) ? savedStartTime : "";
-    } catch {
-      return "";
-    }
-  });
-  const [durationHours, setDurationHours] = useState(() => {
-    try {
-      const savedDuration = Number(JSON.parse(localStorage.getItem("user_booking_info") || "{}")?.durationHours);
-      return Number.isInteger(savedDuration) && savedDuration > 0 ? String(savedDuration) : "";
-    } catch {
-      return "";
-    }
-  });
-  const bookingInfo = useMemo(() => {
-    try {
-      const parsed = JSON.parse(localStorage.getItem("user_booking_info") || "{}");
-      return parsed && typeof parsed === "object" ? parsed : {};
-    } catch {
-      return {};
-    }
-  }, []);
+  const [startTime, setStartTime] = useState(getSavedStartTime);
+  const [durationHours, setDurationHours] = useState(getSavedDurationHours);
+  const bookingInfo = useMemo(() => readBookingInfo(), []);
   const bookingDate = String(bookingInfo.date || "");
   const parsedDurationHours = Number(durationHours);
   const hasValidBookingDetails =
@@ -268,18 +208,10 @@ export default function CreatePlan() {
         amount,
       };
 
-      localStorage.setItem("current_booking_plan", JSON.stringify(planData));
-      localStorage.setItem(
-        "user_booking_info",
-        JSON.stringify({
-          ...bookingInfo,
-          startTime,
-          durationHours: parsedDurationHours,
-        })
-      );
-
-      localStorage.removeItem("current_booking_id");
-      localStorage.removeItem("selected_guide");
+      saveCurrentBookingPlan(planData);
+      mergeBookingInfo({ startTime, durationHours: parsedDurationHours });
+      clearCurrentBookingId();
+      clearSelectedGuide();
 
       setSaveStatus({
         isOpen: true,
@@ -335,7 +267,7 @@ export default function CreatePlan() {
         </div>
 
         {generatedPlans.length > 0 && !isEditMode && (
-          <GeneratedPlans generatedPlans={generatedPlans} onSelectPlan={handleSelectPlan} isRTL={isRTL} language={language} prompt={prompt} t={t} />
+          <GeneratedPlans generatedPlans={generatedPlans} onSelectPlan={handleSelectPlan} isRTL={isRTL} prompt={prompt} t={t} />
         )}
 
         {isEditMode && selectedPlan && (

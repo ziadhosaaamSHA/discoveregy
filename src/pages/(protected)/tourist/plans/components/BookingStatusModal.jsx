@@ -1,4 +1,4 @@
-import { Modal } from "../../../../../components/common/Modal";
+import { Modal } from "../../../../../components/ui";
 import { Check, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -53,4 +53,3 @@ export function BookingStatusModal({ bookingStatus, t, onClose }) {
     </Modal>
   );
 }
-

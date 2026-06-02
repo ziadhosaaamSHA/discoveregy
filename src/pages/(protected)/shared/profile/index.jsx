@@ -6,6 +6,7 @@ import { useAuth } from "../../../../context/AuthContext";
 import { useLanguage } from "../../../../context/LanguageContext";
 import { changePasswordApi, deleteMyAccountApi, updateMyProfileApi } from "../../../../services/auth-api";
 import { tourismApi } from "../../../../services/tourism-api";
+import { ConfirmModal } from "../../../../components/ui";
 
 // Profile manages account details, password changes, and destructive account actions.
 export default function Profile() {
@@ -16,6 +17,7 @@ export default function Profile() {
   const [passwordMessage, setPasswordMessage] = useState("");
   const [error, setError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [resolvedRole, setResolvedRole] = useState("");
   const [profileInitialValues, setProfileInitialValues] = useState({
     userName: user?.name || "",
@@ -139,9 +141,6 @@ export default function Profile() {
 
   const handleDeleteAccount = async () => {
     if (isDeleting) return;
-    const confirmed = window.confirm(t("auth.deleteAccountConfirm"));
-    if (!confirmed) return;
-
     setIsDeleting(true);
     setError("");
     try {
@@ -151,6 +150,7 @@ export default function Profile() {
     } catch (err) {
       setError(err?.message || t("auth.deleteAccountFailed"));
       setIsDeleting(false);
+      setIsDeleteConfirmOpen(false);
     }
   };
 
@@ -262,7 +262,7 @@ export default function Profile() {
           <p className="text-sm text-gray-600 mb-4">{t("auth.deleteAccountHint")}</p>
           <button
             type="button"
-            onClick={handleDeleteAccount}
+            onClick={() => setIsDeleteConfirmOpen(true)}
             disabled={isDeleting}
             className="py-3 px-6 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 disabled:opacity-60"
           >
@@ -270,6 +270,17 @@ export default function Profile() {
           </button>
         </section>
       </div>
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        title={t("auth.deleteAccount")}
+        message={t("auth.deleteAccountConfirm")}
+        confirmLabel={isDeleting ? t("auth.submitting") : t("auth.deleteAccount")}
+        cancelLabel={t("common.cancel")}
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+        isLoading={isDeleting}
+        tone="danger"
+      />
     </div>
   );
 }

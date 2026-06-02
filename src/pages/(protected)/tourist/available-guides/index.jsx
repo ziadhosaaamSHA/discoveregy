@@ -2,17 +2,27 @@ import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../../../context/LanguageContext";
-import { Modal } from "../../../../components/common/Modal";
 import { tourismApi } from "../../../../services/tourism-api";
 import { upsertStoredConversation } from "../../../../services/conversations-store";
-import { parseBookingDateTime } from "../../../../shared/utils/dates";
-import { EmptyState, LoadingState } from "../../../../components/shared";
-import { GuideCard } from "./components/GuideCard";
 import {
-  extractArray,
+  addUpcomingTrip,
+  readBookingInfo,
+  readCurrentBookingId,
+  readCurrentBookingPlan,
+  readSelectedTripId,
+  saveCurrentBookingId,
+  saveSelectedGuide,
+} from "../../../../services/booking-session";
+import {
   extractBookingId,
   extractConversationId,
   mapPaymentMethod,
+} from "../../../../services/mappers/booking.mapper";
+import { parseBookingDateTime } from "../../../../shared/utils/dates";
+import { extractArray } from "../../../../shared/utils/api-shapes";
+import { EmptyState, LoadingState, Modal } from "../../../../components/ui";
+import { GuideCard } from "./components/GuideCard";
+import {
   normalizeGuide,
   parseDateString,
   parseDurationDays,
@@ -58,13 +68,7 @@ export default function AvailableGuides() {
   }, []);
 
   const selectedTripId = useMemo(() => {
-    try {
-      const bookingPlan = JSON.parse(localStorage.getItem("current_booking_plan") || "{}");
-      const numeric = Number(bookingPlan?.tripId ?? bookingPlan?.planId);
-      return Number.isFinite(numeric) ? numeric : null;
-    } catch {
-      return null;
-    }
+    return readSelectedTripId();
   }, []);
 
   const ensureConversation = async (guide) => {
@@ -88,9 +92,9 @@ export default function AvailableGuides() {
     setIsBookingGuide(true);
     setSelectedGuide(guide);
     try {
-      const bookingPlan = JSON.parse(localStorage.getItem("current_booking_plan") || "{}");
-      const bookingInfo = JSON.parse(localStorage.getItem("user_booking_info") || "{}");
-      localStorage.setItem("selected_guide", JSON.stringify(guide));
+      const bookingPlan = readCurrentBookingPlan();
+      const bookingInfo = readBookingInfo();
+      saveSelectedGuide(guide);
 
       const conversationId = await ensureConversation(guide);
       const startDate =
@@ -105,7 +109,7 @@ export default function AvailableGuides() {
         endDate.setDate(endDate.getDate() + parseDurationDays(bookingPlan.duration));
       }
 
-      if (selectedTripId && !localStorage.getItem("current_booking_id")) {
+      if (selectedTripId && !readCurrentBookingId()) {
         const bookingResponse = await tourismApi.createBooking({
           planId: selectedTripId,
           guideId: guide.id || null,
@@ -117,7 +121,7 @@ export default function AvailableGuides() {
         });
         const bookingId = extractBookingId(bookingResponse);
         if (bookingId) {
-          localStorage.setItem("current_booking_id", String(bookingId));
+          saveCurrentBookingId(bookingId);
           if (mapPaymentMethod(bookingInfo.paymentMethod) === "Visa") {
             await tourismApi.payBooking({ bookingId });
           }
@@ -131,7 +135,6 @@ export default function AvailableGuides() {
         }).catch(() => {});
       }
 
-      const upcomingTrips = JSON.parse(localStorage.getItem("upcoming_trips") || "[]");
       const tripTypeObj = typeof bookingPlan.title === 'string' 
         ? { [language]: bookingPlan.title, [language === 'ar' ? 'en' : 'ar']: bookingPlan.title }
         : { en: "Custom Plan", ar: "خطة مخصصة" };
@@ -140,15 +143,14 @@ export default function AvailableGuides() {
         ? { [language]: bookingPlan.date, [language === 'ar' ? 'en' : 'ar']: bookingPlan.date }
         : { en: "Pending confirmation", ar: "في انتظار التأكيد" };
 
-      upcomingTrips.push({
-        id: localStorage.getItem("current_booking_id") || Date.now().toString(),
+      addUpcomingTrip({
+        id: readCurrentBookingId() || Date.now().toString(),
         guideName: guide.name, 
         guideImage: guide.image,
         tripType: tripTypeObj,
         date: dateObj,
         conversationId: conversationId ?? `conv-${guide.id}`
       });
-      localStorage.setItem("upcoming_trips", JSON.stringify(upcomingTrips));
       setIsSuccessModalOpen(true);
     } catch (error) {
       setGuidesError(error?.message || t("availableGuides.bookingFailed"));
