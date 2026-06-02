@@ -365,6 +365,8 @@ const TRANSLATIONS = {
       showOtherTrips: "Show other trips",
       hideOtherTrips: "Hide other trips",
       otherTripsTitle: "Other trips",
+      matchingTrips: "Matching trips",
+      allTrips: "All trips",
     },
     admin: {
       eyebrow: "Admin",
@@ -741,6 +743,8 @@ const TRANSLATIONS = {
       showOtherTrips: "عرض رحلات أخرى",
       hideOtherTrips: "إخفاء الرحلات الأخرى",
       otherTripsTitle: "رحلات أخرى",
+      matchingTrips: "الرحلات المتطابقة",
+      allTrips: "جميع الرحلات",
     },
     admin: {
       eyebrow: "المدير",
