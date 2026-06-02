@@ -2,18 +2,17 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../../../../context/LanguageContext";
 import * as plansBackend from "./backend/plansBackend";
+import { Modal } from "../../../../components/common/Modal";
 import { BookingSettings } from "./components/BookingSettings";
 import { BookingStatusModal } from "./components/BookingStatusModal";
 import { PlansGrid } from "./components/PlansGrid";
 import { PlansHeader } from "./components/PlansHeader";
 import { RecommendedDestinationBanner } from "./components/RecommendedDestinationBanner";
 import {
-  extractArray,
   extractBookingId,
   getSavedDurationHours,
   getSavedStartTime,
   mapPaymentMethod,
-  mapTripToPlan,
   parseBookingDateTime,
   readBookingInfo,
 } from "./components/planUtils";
@@ -34,6 +33,8 @@ export default function Plans() {
   const [startTime, setStartTime] = useState(getSavedStartTime);
   const [durationHours, setDurationHours] = useState(getSavedDurationHours);
   const [deletingPlanId, setDeletingPlanId] = useState(null);
+  const [planToDelete, setPlanToDelete] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
   const [isLoadingDestinations, setIsLoadingDestinations] = useState(true);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const [hasLoadingDelay, setHasLoadingDelay] = useState(true);
@@ -256,15 +257,25 @@ export default function Plans() {
     }
   };
 
-  const handleDeletePlan = async (event, plan) => {
+  // Show confirmation modal for deleting a plan (keeps UX consistent with other modals)
+  const handleDeletePlan = (event, plan) => {
     event.stopPropagation();
     if (deletingPlanId === plan.id) return;
-    const confirmed = window.confirm("Delete this trip?");
-    if (!confirmed) return;
+    setDeleteError("");
+    setPlanToDelete(plan);
+  };
 
+  const confirmDeletePlan = async () => {
+    if (!planToDelete) return;
+    const plan = planToDelete;
+    setPlanToDelete(null);
     setDeletingPlanId(plan.id);
+    setDeleteError("");
+
     try {
       await plansBackend.deleteTrip(plan.tripId);
+
+      // Remove from UI
       setPlans((prev) => prev.filter((item) => item.id !== plan.id));
       setTripDetailsById((prev) => {
         if (!(plan.tripId in prev)) return prev;
@@ -273,8 +284,28 @@ export default function Plans() {
         return next;
       });
       setSelectedPlanId((prev) => (prev === plan.id ? null : prev));
-    } catch {
-      alert("Failed to delete trip.");
+    } catch (err) {
+      // If deletion failed, double-check whether the trip still exists on the server.
+      // Some backends may return an error even when the resource was removed.
+      try {
+        const check = await plansBackend.getTripById(plan.tripId);
+        if (!check) {
+          // Trip appears removed despite the error — treat as success.
+          setPlans((prev) => prev.filter((item) => item.id !== plan.id));
+          setTripDetailsById((prev) => {
+            if (!(plan.tripId in prev)) return prev;
+            const next = { ...prev };
+            delete next[plan.tripId];
+            return next;
+          });
+          setSelectedPlanId((prev) => (prev === plan.id ? null : prev));
+        } else {
+          // Still exists — surface an error to the user via the modal
+          setDeleteError(err?.message || "Failed to delete trip. Please try again.");
+        }
+      } catch {
+        setDeleteError(err?.message || "Failed to delete trip. Please try again.");
+      }
     } finally {
       setDeletingPlanId(null);
     }
@@ -367,6 +398,33 @@ export default function Plans() {
       />
 
       <BookingStatusModal bookingStatus={bookingStatus} t={t} onClose={closeBookingStatus} />
+
+      <Modal
+        isOpen={!!planToDelete}
+        onClose={() => setPlanToDelete(null)}
+        title={t("plans.deleteTrip") || "Delete Trip"}
+        maxWidth="max-w-md"
+      >
+        <p className="text-gray-600 text-lg mb-8">{t("plans.deleteTripConfirm") || "Are you sure you want to delete this trip?"}</p>
+        {deleteError && <p className="text-sm text-red-600 mb-4">{deleteError}</p>}
+        <div className="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setPlanToDelete(null)}
+            className="px-6 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors"
+          >
+            {t("common.close") || "Close"}
+          </button>
+          <button
+            type="button"
+            onClick={confirmDeletePlan}
+            disabled={!planToDelete || deletingPlanId === planToDelete?.id}
+            className="px-6 py-3 rounded-2xl bg-[#d43e0b] text-white font-bold hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+          >
+            {deletingPlanId === planToDelete?.id ? (t("common.loading") || "Loading...") : (t("plans.deleteTrip") || "Delete")}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

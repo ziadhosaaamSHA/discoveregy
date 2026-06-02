@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ActivityCard } from "./ActivityCard";
 
-export default function ActivitiesSection({ activityDestinations, isRTL, t, language }) {
+export default function ActivitiesSection({ activityDestinations, isRTL, t }) {
   return (
     <section id="activities" className="max-w-[1200px] mx-auto px-6 py-12 lg:py-16" aria-labelledby="activities-heading">
       <motion.h2

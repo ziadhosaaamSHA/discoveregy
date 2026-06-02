@@ -1,5 +1,5 @@
 import { generateTravelPlan } from "../../../../../services/ai";
-import { fetchDestinations, getFallbackDestinations } from "../../../../../services/destinations-data";
+import { fetchDestinations } from "../../../../../services/destinations-data";
 import { tourismApi } from "../../../../../services/tourism-api";
 
 function findIdRecursive(obj, seen = new Set()) {
@@ -41,9 +41,9 @@ export function extractBookingId(payload) {
 export async function getDestinations() {
   try {
     const data = await fetchDestinations();
-    return data || getFallbackDestinations();
-  } catch (err) {
-    return getFallbackDestinations();
+    return data || [];
+  } catch {
+    return [];
   }
 }
 

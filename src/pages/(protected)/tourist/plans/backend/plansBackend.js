@@ -1,4 +1,4 @@
-import { getFallbackDestinations, fetchDestinations } from "../../../../../services/destinations-data";
+import { fetchDestinations } from "../../../../../services/destinations-data";
 import { tourismApi } from "../../../../../services/tourism-api";
 import { extractArray, mapTripToPlan } from "../components/planUtils";
 
@@ -8,9 +8,9 @@ import { extractArray, mapTripToPlan } from "../components/planUtils";
 export async function getDestinations() {
   try {
     const data = await fetchDestinations();
-    return data || getFallbackDestinations();
-  } catch (err) {
-    return getFallbackDestinations();
+    return data || [];
+  } catch {
+    return [];
   }
 }
 

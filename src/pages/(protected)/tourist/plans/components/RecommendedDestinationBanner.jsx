@@ -1,7 +1,6 @@
 import { Sparkles } from "lucide-react";
 import { resolveApiAssetUrl } from "@/services/api-client"
 
-const baseUrl = "https://tourism-api-sha-e7g5guagcdc2dddv.westeurope-01.azurewebsites.net";
 // RecommendedDestinationBanner explains when plans are filtered by a destination context.
 export function RecommendedDestinationBanner({ destination, language, isRTL, t }) {
   if (!destination) return null;

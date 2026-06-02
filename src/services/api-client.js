@@ -5,6 +5,10 @@ const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "" : DEFAULT_API_BASE_URL)
 ).replace(/\/+$/, "");
 
+const API_ASSET_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL
+).replace(/\/+$/, "");
+
 const ACCESS_TOKEN_KEY = "degy_access_token";
 const REFRESH_TOKEN_KEY = "degy_refresh_token";
 const AUTH_ROLE_KEY = "degy_auth_role";
@@ -52,7 +56,8 @@ export function resolveApiAssetUrl(path) {
   if (typeof path !== "string") return "";
   const trimmed = path.trim();
   if (!trimmed) return "";
-  return toUrl(trimmed);
+  if (trimmed.startsWith("http")) return trimmed;
+  return `${API_ASSET_BASE_URL}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
 }
 
 function parseJsonSafely(text) {
@@ -195,7 +200,6 @@ async function apiRequestInternal(path, options = {}, retry = true) {
   // Caching: opt-in per-request using options.cache when the feature flag is enabled
   const ENABLE_API_CACHE = import.meta.env.VITE_ENABLE_API_CACHE === "true";
   const cacheOption = options.cache || false;
-  const cacheTTL = typeof options.cacheTTL === "number" ? options.cacheTTL : 5 * 60 * 1000; // default 5 minutes
 
   // Simple in-memory cache map: key -> { expiresAt, data }
   if (!globalThis.__degyApiCache) globalThis.__degyApiCache = new Map();
@@ -258,7 +262,7 @@ async function apiRequestInternal(path, options = {}, retry = true) {
         clearAuthTokens();
         throw new ApiError("Session expired. Please login again.", 401, data);
       }
-      return apiRequest(path, options, false);
+      return apiRequestInternal(path, options, false);
     }
 
     const message =
@@ -303,7 +307,7 @@ export async function apiRequestWithCache(path, options = {}, retry = true) {
     if (ENABLE_API_CACHE && cacheOption && isGet) {
       setApiCache(path, options, res, cacheTTL);
     }
-  } catch (e) {
+  } catch {
     // ignore cache set errors
   }
   return res;
@@ -318,4 +322,3 @@ export function unwrapPayload(responseData) {
   if ("result" in responseData) return responseData.result;
   return responseData;
 }
-

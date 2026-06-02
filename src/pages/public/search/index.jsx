@@ -4,7 +4,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { motion } from "framer-motion";
 import { ArrowLeft, Search, ArrowRight } from "lucide-react";
 import { useLanguage } from "../../../context/LanguageContext";
-import { fetchDestinations, getFallbackDestinations } from "../../../services/destinations-data";
+import { fetchDestinations } from "../../../services/destinations-data";
 import { resolveApiAssetUrl } from "../../../services/api-client";
 
 const cardVariants = {
@@ -21,10 +21,9 @@ export default function SearchResults() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const [query, setQuery] = useState(initialQuery);
-  const [destinations, setDestinations] = useState(() => getFallbackDestinations());
+  const [destinations, setDestinations] = useState(() => []);
   const { t, language, isRTL } = useLanguage();
   const { user } = useAuth();
-  const baseUrl = "https://tourism-api-sha-e7g5guagcdc2dddv.westeurope-01.azurewebsites.net"
 
   useEffect(() => {
     let cancelled = false;
@@ -33,7 +32,7 @@ export default function SearchResults() {
         const data = await fetchDestinations();
         if (!cancelled) setDestinations(data);
       } catch {
-        if (!cancelled) setDestinations(getFallbackDestinations());
+        if (!cancelled) setDestinations([]);
       }
     };
 

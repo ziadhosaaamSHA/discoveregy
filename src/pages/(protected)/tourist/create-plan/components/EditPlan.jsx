@@ -11,6 +11,8 @@ export default function EditPlan({
   setShowAddDestinations,
   showAddDestinations,
   filteredAvailableDestinations,
+  searchQuery,
+  setSearchQuery,
   handleAddDest,
   bookingDate,
   TIME_OPTIONS,
@@ -150,6 +152,8 @@ export default function EditPlan({
               <input
                 autoFocus
                 type="text"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder={t("createPlan.searchPlaceholder")}
                 className="text-2xl font-bold w-full outline-none"
               />

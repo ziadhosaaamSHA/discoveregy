@@ -1,4 +1,4 @@
-import { getFallbackDestinations, fetchDestinations } from "../../../../../services/destinations-data";
+import { fetchDestinations } from "../../../../../services/destinations-data";
 import { resolveApiAssetUrl } from "../../../../../services/api-client";
 import { tourismApi } from "../../../../../services/tourism-api";
 
@@ -8,9 +8,9 @@ import { tourismApi } from "../../../../../services/tourism-api";
 export async function getDestinations() {
   try {
     const data = await fetchDestinations();
-    return data || getFallbackDestinations();
-  } catch (err) {
-    return getFallbackDestinations();
+    return data || [];
+  } catch {
+    return [];
   }
 }
 
@@ -122,7 +122,13 @@ export async function cancelTrip(trip) {
   const refundAmount = Number.isFinite(detailAmount) ? detailAmount : trip.amount;
 
   if (paymentMethod === "visa") {
-    await tourismApi.refundBooking({ bookingId: tripIdNumber, reason: "Booking cancelled by user", amount: Number.isFinite(refundAmount) ? refundAmount : undefined });
+    try {
+      await tourismApi.refundBooking({ bookingId: tripIdNumber, reason: "Booking cancelled by user", amount: Number.isFinite(refundAmount) ? refundAmount : undefined });
+    } catch (err) {
+      // Refund failed but cancellation succeeded; log and continue so UI reflects deletion
+      // Do not throw here to avoid reporting a false failure to the user
+      console.error("refund failed for booking", tripIdNumber, err);
+    }
   }
 
   return true;

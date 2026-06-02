@@ -14,8 +14,8 @@ import { useLanguage } from "../../../context/LanguageContext";
 import { tourismApi } from "../../../services/tourism-api";
 import {
   fetchDestinations,
-  getFallbackDestinations,
 } from "@/services/destinations-data";
+import { resolveApiAssetUrl } from "../../../services/api-client";
 
 // Bookmarks displays saved destinations and reconciles them with current API data.
 export default function Bookmarks() {
@@ -23,14 +23,9 @@ export default function Bookmarks() {
   const { bookmarks, removeBookmark, bookmarkCount } = useBookmarks();
   const { t, language, isRTL } = useLanguage();
 
-  const [destinations, setDestinations] = useState(() =>
-    getFallbackDestinations()
-  );
+  const [destinations, setDestinations] = useState([]);
 
   const [ratings, setRatings] = useState({});
-
-  const baseUrl =
-    "https://tourism-api-sha-e7g5guagcdc2dddv.westeurope-01.azurewebsites.net";
 
   useEffect(() => {
     let cancelled = false;
@@ -44,7 +39,7 @@ export default function Bookmarks() {
         }
       } catch {
         if (!cancelled) {
-          setDestinations(getFallbackDestinations());
+          setDestinations([]);
         }
       }
     };
@@ -208,7 +203,7 @@ export default function Bookmarks() {
                     className="flex-shrink-0"
                   >
                     <img
-                      src={`${baseUrl}${destination.image}`}
+                      src={`${resolveApiAssetUrl(destination.image)}`}
                       alt={data.name}
                       className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-xl"
                       loading="lazy"

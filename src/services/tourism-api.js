@@ -22,6 +22,9 @@ export const tourismApi = {
   createCustomTrip: (payload) =>
     apiRequest("/api/trips/custom", { method: "POST", body: buildFormData(payload) }),
   getMyCustomTrips: () => apiRequest("/api/trips/custom/my"),
+  getCustomTripById: (id) => apiRequest(`/api/trips/custom/${id}`),
+  deleteCustomTrip: (id) => apiRequest(`/api/trips/custom/${id}`, { method: "DELETE" }),
+  getAllCustomTrips: () => apiRequest("/api/trips/custom/all"),
 
   // Places
   getPlaces: () => apiRequest("/api/places", { cache: true, cacheTTL: 5 * 60 * 1000 }),
@@ -61,6 +64,8 @@ export const tourismApi = {
   // Chat
   createConversation: (payload) =>
     apiRequest("/api/conversations", { method: "POST", body: payload }),
+  getConversations: () => apiRequest("/api/conversations"),
+  getConversationById: (id) => apiRequest(`/api/conversations/${id}`),
   getMessages: (conversationId) => apiRequest(`/api/messages/${conversationId}`),
   sendMessage: (payload) => apiRequest("/api/messages", { method: "POST", body: payload }),
   markMessagesRead: (conversationId) => apiRequest(`/api/messages/${conversationId}/read`, { method: "PUT" }),
@@ -68,6 +73,11 @@ export const tourismApi = {
   // Users
   getUsers: () => apiRequest("/api/users", { cache: true, cacheTTL: 5 * 60 * 1000 }),
   getGuides: () => apiRequest("/api/users/guides", { cache: true, cacheTTL: 5 * 60 * 1000 }),
+  getAllGuides: () => apiRequest("/api/users/guides/all"),
+  getPendingGuides: () => apiRequest("/api/users/guides/pending"),
+  approveGuide: (id) => apiRequest(`/api/users/guides/${id}/approve`, { method: "PUT" }),
+  rejectGuide: (id, payload) => apiRequest(`/api/users/guides/${id}/reject`, { method: "PUT", body: payload }),
+  suspendGuide: (id) => apiRequest(`/api/users/guides/${id}/suspend`, { method: "PUT" }),
   getUserById: (id) => apiRequest(`/api/users/${id}`),
   deleteUserById: (id) => apiRequest(`/api/users/${id}`, { method: "DELETE" }),
   getUserRoles: (id) => apiRequest(`/api/users/${id}/roles`),
@@ -84,11 +94,14 @@ export const tourismApi = {
   // Booking + payment
   createBooking: (payload) => apiRequest("/api/bookings", { method: "POST", body: payload }),
   getBookings: () => apiRequest(getActiveAuthRole() === "guide" ? "/api/bookings/guide" : "/api/bookings/my"),
+  getAllBookings: () => apiRequest("/api/bookings/all"),
   getBookingById: (id) => apiRequest(`/api/bookings/${id}`),
   cancelBooking: (id, payload) =>
     apiRequest(`/api/bookings/${id}/cancel`, { method: "PUT", body: payload }),
+  confirmBooking: (id) => apiRequest(`/api/bookings/${id}/confirm`, { method: "PUT" }),
   payBooking: (payload) => apiRequest("/api/payments/pay", { method: "POST", body: payload }),
   refundBooking: (payload) => apiRequest("/api/payments/refund", { method: "POST", body: payload }),
+  getPaymentByBooking: (bookingId) => apiRequest(`/api/payments/booking/${bookingId}`),
 
   // Notifications
   getNotifications: () => apiRequest("/api/notifications"),

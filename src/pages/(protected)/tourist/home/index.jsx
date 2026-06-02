@@ -6,7 +6,6 @@ import { useLanguage } from "../../../../context/LanguageContext";
 import { useAuth } from "../../../../context/AuthContext";
 import { Modal } from "../../../../components/common/Modal";
 import * as homeBackend from "./backend/homeBackend";
-import { getFallbackDestinations } from "../../../../services/destinations-data";
 import UpcomingTrips from "./components/UpcomingTrips";
 import ActivitiesSection from "./components/ActivitiesSection";
 import PopularSection from "./components/PopularSection";
@@ -16,7 +15,7 @@ import { ACTIVITY_IDS, POPULAR_IDS } from "./components/homeCards";
 export default function TouristHome() {
   const { isRTL, t, language } = useLanguage();
   const { user } = useAuth();
-  const [destinations, setDestinations] = useState(() => getFallbackDestinations());
+  const [destinations, setDestinations] = useState([]);
   const [isLoadingDestinations, setIsLoadingDestinations] = useState(true);
   const [upcomingTrips, setUpcomingTrips] = useState([]);
   const [isLoadingUpcomingTrips, setIsLoadingUpcomingTrips] = useState(true);
@@ -31,7 +30,7 @@ export default function TouristHome() {
         const data = await homeBackend.getDestinations();
         if (!cancelled) setDestinations(data);
       } catch {
-        if (!cancelled) setDestinations(await homeBackend.getDestinations());
+        if (!cancelled) setDestinations([]);
       } finally {
         if (!cancelled) setIsLoadingDestinations(false);
       }
@@ -42,10 +41,10 @@ export default function TouristHome() {
       cancelled = true;
     };
   }, []);
-
+  
   useEffect(() => {
     let cancelled = false;
-
+    
     const loadBookings = async () => {
       if (!user) {
         if (!cancelled) {
@@ -64,13 +63,13 @@ export default function TouristHome() {
         if (!cancelled) setIsLoadingUpcomingTrips(false);
       }
     };
-
+    
     loadBookings();
     return () => {
       cancelled = true;
     };
   }, [user]);
-
+  
   const activityDestinations = useMemo(
     () => destinations.filter((d) => ACTIVITY_IDS.includes(d.id)),
     [destinations]
@@ -79,18 +78,14 @@ export default function TouristHome() {
     () => destinations.filter((d) => POPULAR_IDS.includes(d.id)),
     [destinations]
   );
-
+  
   const handleCancelTrip = async (trip) => {
     if (!trip?.id || cancellingTripId === trip.id) return;
-    const tripIdNumber = Number(trip.id);
-    const canCancelViaApi = Number.isFinite(tripIdNumber);
-    const customTripMatch = /^custom-(\d+)$/.exec(String(trip.id));
-    const customTripId = customTripMatch ? Number(customTripMatch[1]) : null;
     setCancellingTripId(trip.id);
-
+    
     try {
       await homeBackend.cancelTrip(trip);
-
+      
       setUpcomingTrips((prev) => prev.filter((item) => item.id !== trip.id));
     } catch {
       alert(t("destination.cancelTripFailed"));
@@ -98,19 +93,19 @@ export default function TouristHome() {
       setCancellingTripId(null);
     }
   };
-
+  
   const requestCancelTrip = (trip) => {
     if (!trip?.id || cancellingTripId === trip.id) return;
     setTripToCancel(trip);
   };
-
+  
   const confirmCancelTrip = async () => {
     if (!tripToCancel) return;
     const target = tripToCancel;
     setTripToCancel(null);
     await handleCancelTrip(target);
   };
-
+  
   const isHomeContentLoading = isLoadingDestinations || isLoadingUpcomingTrips;
 
   return (
@@ -150,7 +145,7 @@ export default function TouristHome() {
           cancellingTripId={cancellingTripId}
         />
 
-        <ActivitiesSection activityDestinations={activityDestinations} isRTL={isRTL} t={t} language={language} />
+        <ActivitiesSection activityDestinations={activityDestinations} isRTL={isRTL} t={t} />
 
             <PopularSection popularDestinations={popularDestinations} isRTL={isRTL} t={t} />
           </>

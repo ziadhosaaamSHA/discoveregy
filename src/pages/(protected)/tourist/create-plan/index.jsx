@@ -5,8 +5,6 @@ import { useLanguage } from "../../../../context/LanguageContext";
 import * as createPlanBackend from "./backend/createPlanBackend";
 import GeneratedPlans from "./components/GeneratedPlans";
 import EditPlan from "./components/EditPlan";
-import { fetchDestinations, getFallbackDestinations } from "../../../../services/destinations-data";
-import { tourismApi } from "../../../../services/tourism-api";
 import { SectionHeader } from "../../../../components/common/SectionHeader";
 import { Modal } from "../../../../components/common/Modal";
 
@@ -89,7 +87,7 @@ export default function CreatePlan() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
   const [bookingStatus, setBookingStatus] = useState({ isOpen: false, isSuccess: false, message: "" });
-  const [destinations, setDestinations] = useState(() => getFallbackDestinations());
+  const [destinations, setDestinations] = useState(() => []);
   
   // Customizations for the selected plan
   const [customDestinations, setCustomDestinations] = useState([]);
@@ -134,7 +132,7 @@ export default function CreatePlan() {
         const data = await createPlanBackend.getDestinations();
         if (!cancelled) setDestinations(data);
       } catch {
-        if (!cancelled) setDestinations(getFallbackDestinations());
+        if (!cancelled) setDestinations([]);
       }
     };
 
@@ -293,7 +291,6 @@ export default function CreatePlan() {
       setIsSubmittingPlan(false);
     }
   };
-  const baseUrl = "https://tourism-api-sha-e7g5guagcdc2dddv.westeurope-01.azurewebsites.net"
   const isDurationFilled = durationHours !== '' && durationHours !== null && durationHours !== undefined;
   return (
     <div className="min-h-screen bg-[#ead9c5] text-black font-sans pb-20" dir={isRTL ? "rtl" : "ltr"}>
@@ -344,6 +341,8 @@ export default function CreatePlan() {
             setShowAddDestinations={setShowAddDestinations}
             showAddDestinations={showAddDestinations}
             filteredAvailableDestinations={filteredAvailableDestinations}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
             handleAddDest={handleAddDest}
             bookingDate={bookingDate}
             TIME_OPTIONS={TIME_OPTIONS}
