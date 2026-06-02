@@ -10,6 +10,7 @@ import {
   rolesApi,
   tripsApi,
   usersApi,
+  communityApi,
 } from "./api";
 
 // Backward-compatible aggregate used by existing pages.
@@ -26,4 +27,6 @@ export const tourismApi = {
   ...notificationsApi,
   ...rolesApi,
   ...reviewsApi,
+  ...communityApi,
 };
+

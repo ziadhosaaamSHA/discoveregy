@@ -26,6 +26,8 @@ const AdminDashboard = lazy(() => import("../pages/(protected)/admin/dashboard")
 const TouristLayout = lazy(() => import("../pages/(protected)/tourist/layout"));
 const GuideLayout = lazy(() => import("../pages/(protected)/guide/layout"));
 const SharedLayout = lazy(() => import("../pages/(protected)/shared/layout"));
+const CommunityFeed = lazy(() => import("../pages/public/community"));
+const CommunityPostDetails = lazy(() => import("../pages/public/community/PostDetails"));
 
 export function AppRoutes() {
   return (
@@ -44,7 +46,13 @@ export function AppRoutes() {
       <Route path="/guide/destination/:id" element={<DestinationDetail />} />
       <Route path="/bookmarks" element={<Bookmarks />} />
 
+      <Route element={<SharedLayout />}>
+        <Route path="/community" element={<CommunityFeed />} />
+        <Route path="/community/:postId" element={<CommunityPostDetails />} />
+      </Route>
+
       <Route element={<ProtectedRoute />}>
+
         <Route element={<ProtectedRoute allowedRoles={[ROLES.TOURIST]} />}>
           <Route path="/tourist" element={<TouristLayout />}>
             <Route index element={<Navigate to="home" replace />} />

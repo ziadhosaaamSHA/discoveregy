@@ -82,18 +82,22 @@ export default function Header() {
     ? [
         { label: t("common.home"), href: roleHome, icon: MapPin },
         { label: t("requests.title"), href: "/requests", icon: MapPin },
+        { label: language === "ar" ? "المجتمع" : "Community", href: "/community", icon: Globe },
         { label: t("common.aboutUs"), href: "/#about-us", icon: Info },
       ]
     : user?.type === "admin"
       ? [
           { label: "Dashboard", href: "/admin", icon: MapPin },
+          { label: language === "ar" ? "المجتمع" : "Community", href: "/community", icon: Globe },
           { label: t("common.aboutUs"), href: "/#about-us", icon: Info },
         ]
       : [
           { label: t("common.home"), href: roleHome, icon: MapPin },
           { label: t("common.explore"), href: user ? "/home#explore" : "/#explore", icon: Compass },
+          { label: language === "ar" ? "المجتمع" : "Community", href: "/community", icon: Globe },
           { label: t("common.aboutUs"), href: user ? "/home#about-us" : "/#about-us", icon: Info },
         ];
+
 
   useEffect(() => {
     const handleScroll = () => {

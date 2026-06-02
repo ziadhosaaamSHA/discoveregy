@@ -14,3 +14,4 @@ export { reviewsApi } from "./reviews.api";
 export { rolesApi } from "./roles.api";
 export { tripsApi } from "./trips.api";
 export { usersApi } from "./users.api";
+export { communityApi } from "./community.api";
