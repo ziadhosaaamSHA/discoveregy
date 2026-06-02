@@ -150,7 +150,7 @@ export async function logoutApi() {
 export async function forgotPasswordApi(email) {
   return apiRequest("/api/auth/forgot-password", {
     method: "POST",
-    body: { email },
+    body: JSON.stringify(email),
     auth: false,
   });
 }
