@@ -22,6 +22,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useBookmarks } from "../../context/BookmarksContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { tourismApi } from "../../services/tourism-api";
+import { Modal } from "../common/Modal";
 
 const overlayVariants = {
   hidden: { opacity: 0 },
@@ -64,10 +65,17 @@ function isUnreadNotification(notification) {
   return false;
 }
 
+function getDisplayName(user) {
+  const name = String(user?.name || "").trim();
+  if (name && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(name)) return name;
+  return "User";
+}
+
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [isSignoutModalOpen, setIsSignoutModalOpen] = useState(false);
   const [chatCount, setChatCount] = useState(0);
   const [points, setPoints] = useState(null);
   const langRef = useRef(null);
@@ -75,6 +83,7 @@ export default function Header() {
   const { user, logout } = useAuth();
   const { bookmarkCount } = useBookmarks();
   const { language, setLanguage, t, supportedLanguages, isRTL } = useLanguage();
+  const displayName = getDisplayName(user);
 
   const roleHome =
     user?.type === "admin"
@@ -197,6 +206,17 @@ export default function Header() {
     }
   };
 
+  const requestSignout = () => {
+    setMobileOpen(false);
+    setIsSignoutModalOpen(true);
+  };
+
+  const confirmSignout = async () => {
+    setIsSignoutModalOpen(false);
+    await logout();
+    navigate("/login", { replace: true });
+  };
+
 
   return (
     <>
@@ -306,12 +326,13 @@ export default function Header() {
                   </span>
                 )}
                 <Link to="/profile" className="hidden sm:block text-gray-800 font-medium hover:text-primary transition-colors">
-                  {user.name}
+                  {displayName}
                 </Link>
                 <button
                   type="button"
-                  onClick={logout}
+                  onClick={requestSignout}
                   className="hidden sm:flex items-center gap-1 text-gray-800 hover:text-primary transition-colors font-medium"
+                  aria-label={t("common.logout")}
                 >
                   <LogOut size={18} />
                 </button>
@@ -527,7 +548,7 @@ export default function Header() {
                       </div>
                       <div>
                         <Link to="/profile" onClick={() => setMobileOpen(false)} className="text-sm font-semibold text-gray-800 hover:text-primary transition-colors">
-                          {user.name}
+                          {displayName}
                         </Link>
                         <p className="text-xs text-muted">{t("common.welcomeBack")}</p>
                         {points !== null && (
@@ -539,10 +560,7 @@ export default function Header() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        setMobileOpen(false);
-                        logout();
-                      }}
+                      onClick={requestSignout}
                       className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
                     >
                       <LogOut size={18} />
@@ -594,6 +612,33 @@ export default function Header() {
           </>
         )}
       </AnimatePresence>
+
+      <Modal
+        isOpen={isSignoutModalOpen}
+        onClose={() => setIsSignoutModalOpen(false)}
+        title={t("common.signoutConfirmTitle") || "Sign out?"}
+        maxWidth="max-w-md"
+      >
+        <p className="text-gray-600 text-lg mb-8">
+          {t("common.signoutConfirmBody") || "Are you sure you want to sign out of your account?"}
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsSignoutModalOpen(false)}
+            className="px-6 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors"
+          >
+            {t("common.cancel") || "Cancel"}
+          </button>
+          <button
+            type="button"
+            onClick={confirmSignout}
+            className="px-6 py-3 rounded-2xl bg-[#d43e0b] text-white font-bold hover:brightness-110 transition-all"
+          >
+            {t("common.logout") || "Log out"}
+          </button>
+        </div>
+      </Modal>
     </>
   );
 }

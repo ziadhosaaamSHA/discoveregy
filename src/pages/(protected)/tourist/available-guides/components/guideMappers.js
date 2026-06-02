@@ -1,9 +1,24 @@
+import { resolveApiAssetUrl } from "../../../../../services/api-client";
+
 // extractArray normalizes common API envelope shapes into a list.
 export function extractArray(payload) {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.items)) return payload.items;
   if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.result)) return payload.result;
   return [];
+}
+
+function normalizeLanguages(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((language) => {
+      if (typeof language === "string") return language;
+      if (!language || typeof language !== "object") return "";
+      return language.name || language.nameEn || language.englishName || language.displayName || language.code || "";
+    })
+    .map((language) => String(language).trim())
+    .filter(Boolean);
 }
 
 // normalizeGuide converts guide/user API records into the GuideCard view model.
@@ -12,21 +27,21 @@ export function normalizeGuide(guide) {
   const firstName = guide?.firstName || "";
   const lastName = guide?.lastName || "";
   const fullName = `${firstName} ${lastName}`.trim();
-  const name = fullName || guide?.fullName || guide?.name || guide?.userName || guide?.guideName || "Guide";
+  const name = fullName || guide?.fullName || guide?.name || guide?.userName || guide?.guideName || "";
+  const rating = Number(guide?.rating ?? guide?.averageRating);
+  const image = resolveApiAssetUrl(guide?.profileImageUrl || guide?.imageUrl || guide?.avatarUrl || guide?.photoUrl || "");
+  const languages = normalizeLanguages(guide?.languages || guide?.languageNames);
 
   return {
     id,
     name: { en: name, ar: name },
     specialty: {
-      en: guide?.specialty || guide?.bio || "Local Guide",
-      ar: guide?.specialty || guide?.bio || "مرشد سياحي",
+      en: guide?.specialty || guide?.bio || "",
+      ar: guide?.specialtyAr || guide?.specialty || guide?.bio || "",
     },
-    rating: Number(guide?.rating || 4.8).toFixed(1),
-    image:
-      guide?.profileImageUrl ||
-      guide?.imageUrl ||
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-    languages: Array.isArray(guide?.languages) && guide.languages.length ? guide.languages : ["English", "Arabic"],
+    rating: Number.isFinite(rating) ? rating.toFixed(1) : null,
+    image,
+    languages,
   };
 }
 

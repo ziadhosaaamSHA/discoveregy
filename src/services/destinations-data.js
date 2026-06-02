@@ -11,9 +11,14 @@ let inflightRequest = null;
 
 function normalizePrice(value) {
   if (typeof value === "number" && Number.isFinite(value)) {
-    return `$${value}`;
+    return `${value} EGP`;
   }
   return null;
+}
+
+function normalizeTicketPrice(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
 }
 
 function readPlaceId(place) {
@@ -41,7 +46,8 @@ function mapApiPlace(place) {
     id: placeId,
     image: resolveApiAssetUrl(place?.imageUrl || place?.ImageUrl) || FALLBACK_IMAGE,
     videoUrl: resolveApiAssetUrl(place?.videoUrl || place?.videoURL || place?.VideoUrl || place?.VideoURL) || null,
-    price: normalizePrice(place?.ticketPrice ?? place?.TicketPrice) || "$0",
+    ticketPrice: normalizeTicketPrice(place?.ticketPrice ?? place?.TicketPrice),
+    price: normalizePrice(place?.ticketPrice ?? place?.TicketPrice) || "0 EGP",
     duration: DEFAULT_DURATION,
     rating: 4.5,
     reviews: 0,

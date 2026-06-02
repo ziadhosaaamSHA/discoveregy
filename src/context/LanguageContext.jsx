@@ -31,6 +31,8 @@ const TRANSLATIONS = {
       loading: "Loading...",
       selectLanguage: "Select language",
       cancel: "Cancel",
+      signoutConfirmTitle: "Sign out?",
+      signoutConfirmBody: "Are you sure you want to sign out of your account?",
       points: "Points",
       notifications: "Notifications",
     },
@@ -251,6 +253,7 @@ const TRANSLATIONS = {
       selectPayment: "Select a payment method",
       paymentRequired: "Payment method is required",
       bookingInstructions: "Fill in your details to complete your booking",
+      withGuide: "With a tour guide",
       paymentOptions: {
         instapay: { name: "InstaPay", description: "Pay via InstaPay" },
         vodafone_cash: {
@@ -291,6 +294,8 @@ const TRANSLATIONS = {
       date: "Date",
       people: "People",
       accepted: "ACCEPTED",
+      noRequests:  "No incoming requests at the moment.",
+      errorLoading: "Could not load requests.",
     },
     chats: {
       title: "Chats",
@@ -417,6 +422,8 @@ const TRANSLATIONS = {
       loading: "جارٍ التحميل...",
       selectLanguage: "اختر اللغة",
       cancel: "إلغاء",
+      signoutConfirmTitle: "تسجيل الخروج؟",
+      signoutConfirmBody: "هل أنت متأكد أنك تريد تسجيل الخروج من حسابك؟",
       points: "النقاط",
       notifications: "الإشعارات",
     },
@@ -601,6 +608,7 @@ const TRANSLATIONS = {
       selectPayment: "اختر طريقة الدفع",
       paymentRequired: "طريقة الدفع مطلوبة",
       bookingInstructions: "أدخل بياناتك لإكمال عملية الحجز",
+      withGuide: "مع مرشد سياحي",
       paymentOptions: {
         instapay: { name: "إنستا باي", description: "ادفع عبر إنستا باي" },
         vodafone_cash: {

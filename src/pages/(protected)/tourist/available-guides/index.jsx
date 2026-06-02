@@ -44,36 +44,8 @@ export default function AvailableGuides() {
         setIsLoadingGuides(true);
         setGuidesError("");
         const response = await tourismApi.getGuides();
-        const apiGuides = extractArray(response).map(normalizeGuide).filter((guide) => guide.id);
-        if (!cancelled) {
-          setGuides(apiGuides);
-        }
-        if (apiGuides.length > 0) return;
-      } catch {
-        // Fallback to users list when guides endpoint is unavailable.
-      }
-
-      try {
-        const tripsResponse = await tourismApi.getTrips();
-        const trips = extractArray(tripsResponse).filter((trip) => trip?.guideId);
-        const byGuideId = new Map();
-        trips.forEach((trip) => {
-          if (!byGuideId.has(String(trip.guideId))) {
-            byGuideId.set(String(trip.guideId), normalizeGuide({
-              id: trip.guideId,
-              guideId: trip.guideId,
-              name: trip.guideName,
-              specialty: trip.title,
-              imageUrl: trip.imageUrl,
-              rating: 4.8,
-            }));
-          }
-        });
-        const normalizedGuides = Array.from(byGuideId.values()).filter((guide) => guide.id);
-        if (!cancelled) {
-          setGuides(normalizedGuides);
-        }
-        return;
+        const nextGuides = extractArray(response).map(normalizeGuide).filter((guide) => guide.id);
+        if (!cancelled) setGuides(nextGuides);
       } catch {
         if (!cancelled) {
           setGuides([]);

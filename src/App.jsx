@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Landing from "./pages/public/landing";
 import SearchResults from "./pages/public/search";
 import DestinationDetail from "./pages/public/destination";
@@ -7,6 +7,7 @@ import Demo from "./pages/public/demo";
 import Login from "./pages/auth/login";
 import SignUp from "./pages/auth/signup";
 import ForgotPassword from "./pages/auth/forgot-password";
+import AdminLogin from "./pages/auth/admin";
 import RoleHome from "./pages/(protected)/shared/home";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { FloatingChatWidget } from "./components/ui/floating-chat-widget";
@@ -18,7 +19,6 @@ import Requests from "./pages/(protected)/guide/requests";
 import Chats from "./pages/(protected)/shared/chats";
 import Profile from "./pages/(protected)/shared/profile";
 import Notifications from "./pages/(protected)/shared/notifications";
-import AdminLogin from "./pages/auth/admin";
 import AdminDashboard from "./pages/(protected)/admin/dashboard";
 import TouristLayout from "./pages/(protected)/tourist/layout";
 import GuideLayout from "./pages/(protected)/guide/layout";
@@ -30,117 +30,91 @@ const ROLES = {
   ADMIN: "admin",
 };
 
-const authRoutes = [
-  { path: "/login", element: <Login /> },
-  { path: "/signup", element: <SignUp /> },
-  { path: "/forgot-password", element: <ForgotPassword /> },
-  { path: "/admin/login", element: <AdminLogin /> },
+const CHAT_HIDDEN_PREFIXES = [
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/admin/login",
+  "/admin",
+  "/tourist/pay",
+  "/tourist/plans",
+  "/tourist/create-plan",
+  "/tourist/available-guides",
+  "/guide/home",
+  "/guide/requests",
+  "/available-guides",
+  "/requests",
+  "/chats",
+  "/notifications",
 ];
 
-const publicRoutes = [
-  { path: "/search", element: <SearchResults /> },
-  { path: "/destination/:id", element: <DestinationDetail /> },
-  { path: "/tourist/destination/:id", element: <DestinationDetail /> },
-  { path: "/guide/destination/:id", element: <DestinationDetail /> },
-  { path: "/search", element: <SearchResults /> },
-  { path: "/tourist/search", element: <SearchResults /> },
-  { path: "/guide/search", element: <SearchResults /> },
-  { path: "/bookmarks", element: <Bookmarks /> },
-  { path: "/demo", element: <Demo /> },
-];
-
-const touristRoutes = [
-  { path: "/tourist/home", element: <RoleHome /> },
-  { path: "/tourist/pay", element: <BookingForm /> },
-  { path: "/tourist/plans", element: <Plans /> },
-  { path: "/tourist/create-plan", element: <CreatePlan /> },
-  { path: "/tourist/available-guides", element: <AvailableGuides /> },
-];
-
-const guideRoutes = [
-  { path: "/guide/home", element: <RoleHome /> },
-];
-
-const touristDefaultLayoutRoutes = [
-  { path: "/available-guides", element: <AvailableGuides /> },
-];
-
-const guideDefaultLayoutRoutes = [
-  { path: "/requests", element: <Requests /> },
-];
-
-const adminRoutes = [
-  { path: "/admin", element: <AdminDashboard /> },
-];
-
-const sharedRoutes = [
-  { path: "/profile", element: <Profile /> },
-];
-
-const sharedDefaultLayoutRoutes = [
-  { path: "/chats", element: <Chats /> },
-  { path: "/chats/:conversationId", element: <Chats /> },
-  { path: "/notifications", element: <Notifications /> },
-];
+function shouldHideFloatingChat(pathname) {
+  return CHAT_HIDDEN_PREFIXES.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
 
 // App owns URL-to-page mapping and keeps route protection explicit.
 function App() {
   const location = useLocation();
-  const hideChat = ["/login", "/signup", "/forgot-password", "/admin/login", "/tourist/pay", "/tourist/plans", "/tourist/create-plan", "/tourist/available-guides", "/guide/requests", "/guide/home", "/shared/chats", "/shared/notifications", "/admin"].includes(location.pathname) || location.pathname.startsWith("/chats");
+  const hideChat = shouldHideFloatingChat(location.pathname);
 
   return (
     <>
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+
+        <Route path="/search" element={<SearchResults />} />
+        <Route path="/tourist/search" element={<SearchResults />} />
+        <Route path="/guide/search" element={<SearchResults />} />
+        <Route path="/destination/:id" element={<DestinationDetail />} />
+        <Route path="/tourist/destination/:id" element={<DestinationDetail />} />
+        <Route path="/guide/destination/:id" element={<DestinationDetail />} />
+        <Route path="/bookmarks" element={<Bookmarks />} />
+        <Route path="/demo" element={<Demo />} />
+
         <Route element={<ProtectedRoute />}>
-          {/* Tourist specific pages wrapped in TouristLayout */}
           <Route element={<ProtectedRoute allowedRoles={[ROLES.TOURIST]} />}>
+            <Route path="/tourist" element={<TouristLayout />}>
+              <Route index element={<Navigate to="home" replace />} />
+              <Route path="home" element={<RoleHome />} />
+              <Route path="pay" element={<BookingForm />} />
+              <Route path="plans" element={<Plans />} />
+              <Route path="create-plan" element={<CreatePlan />} />
+              <Route path="available-guides" element={<AvailableGuides />} />
+            </Route>
             <Route element={<TouristLayout />}>
-              {touristRoutes.map((route) => (
-                <Route key={route.path} path={route.path} element={route.element} />
-              ))}
-              {touristDefaultLayoutRoutes.map((route) => (
-                <Route key={route.path} path={route.path} element={route.element} />
-              ))}
+              <Route path="/available-guides" element={<AvailableGuides />} />
             </Route>
           </Route>
 
-          {/* Guide specific pages wrapped in GuideLayout */}
           <Route element={<ProtectedRoute allowedRoles={[ROLES.GUIDE]} />}>
+            <Route path="/guide" element={<GuideLayout />}>
+              <Route index element={<Navigate to="home" replace />} />
+              <Route path="home" element={<RoleHome />} />
+              <Route path="requests" element={<Requests />} />
+            </Route>
             <Route element={<GuideLayout />}>
-              {guideRoutes.map((route) => (
-                <Route key={route.path} path={route.path} element={route.element} />
-              ))}
-              {guideDefaultLayoutRoutes.map((route) => (
-                <Route key={route.path} path={route.path} element={route.element} />
-              ))}
+              <Route path="/requests" element={<Requests />} />
             </Route>
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]} />}>
-            {adminRoutes.map((route) => (
-              <Route key={route.path} path={route.path} element={route.element} />
-            ))}
+            <Route path="/admin" element={<AdminDashboard />} />
           </Route>
 
-          {/* Shared protected pages wrapped in SharedLayout */}
           <Route element={<ProtectedRoute allowedRoles={Object.values(ROLES)} />}>
             <Route element={<SharedLayout />}>
-              {sharedRoutes.map((route) => (
-                <Route key={route.path} path={route.path} element={route.element} />
-              ))}
-              {sharedDefaultLayoutRoutes.map((route) => (
-                <Route key={route.path} path={route.path} element={route.element} />
-              ))}
+              <Route path="/home" element={<RoleHome />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/chats" element={<Chats />} />
+              <Route path="/chats/:conversationId" element={<Chats />} />
+              <Route path="/notifications" element={<Notifications />} />
             </Route>
           </Route>
         </Route>
-        {authRoutes.map((route) => (
-          <Route key={route.path} path={route.path} element={route.element} />
-        ))}
-        {publicRoutes.map((route) => (
-          <Route key={route.path} path={route.path} element={route.element} />
-        ))}
       </Routes>
       {!hideChat && <FloatingChatWidget />}
     </>

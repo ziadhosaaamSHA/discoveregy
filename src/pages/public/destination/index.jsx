@@ -191,6 +191,14 @@ function getEmbedUrl(url) {
 
   return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0`;
 }
+
+function readCoordinate(...values) {
+  for (const value of values) {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) return numeric;
+  }
+  return null;
+}
   // Prefer API-provided placeDetails when available
   const currentPlaceId = placeDetails?.id
   let name;
@@ -203,6 +211,13 @@ function getEmbedUrl(url) {
   }
   const heroImage = resolveApiAssetUrl(placeDetails?.imageUrl);
   const videoButtonLabel = language === "ar" ? "فيديو المكان" : "Place video";
+  const latitude = readCoordinate(placeDetails?.latitude, placeDetails?.Latitude, placeDetails?.lat, placeDetails?.Lat);
+  const longitude = readCoordinate(placeDetails?.longitude, placeDetails?.Longitude, placeDetails?.lng, placeDetails?.Lng);
+  const hasCoordinates = latitude !== null && longitude !== null;
+  const handleOpenMap = () => {
+    if (!hasCoordinates) return;
+    window.open(`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`, "_blank", "noopener,noreferrer");
+  };
   const displayedReviews = reviews
   const handleSubmitReview = async () => {
     if (!reviewText.trim()) return;
@@ -433,7 +448,7 @@ function getEmbedUrl(url) {
               </button>
               <button
                 type="button"
-                className="w-12 h-12 flex items-center justify-center rounded-full text-white transition-all hover:brightness-110"
+                className="w-12 h-12 flex items-center justify-center rounded-full text-white transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:brightness-100"
                 style={{ backgroundColor: "#d4800b", boxShadow: "0px 4px 4px 0px rgba(0,0,0,0.15)" }}
                 aria-label={t("destination.call")}
                 >
@@ -441,9 +456,12 @@ function getEmbedUrl(url) {
               </button>
               <button
                 type="button"
+                onClick={handleOpenMap}
+                disabled={!hasCoordinates}
                 className="w-12 h-12 flex items-center justify-center rounded-full text-white transition-all hover:brightness-110"
                 style={{ backgroundColor: "#d4800b", boxShadow: "0px 4px 4px 0px rgba(0,0,0,0.15)" }}
                 aria-label={t("destination.viewLocation")}
+                title={hasCoordinates ? t("destination.viewLocation") : (language === "ar" ? "الموقع غير متاح" : "Location unavailable")}
                 >
                 <MapPin size={20} />
               </button>

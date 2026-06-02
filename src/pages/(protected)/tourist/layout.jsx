@@ -6,9 +6,15 @@ import { useLanguage } from "../../../context/LanguageContext";
 
 // TouristLayout wraps tourist-specific pages with a common header and layout.
 export default function TouristLayout() {
-  const { t, isRTL } = useLanguage();
+  const { isRTL } = useLanguage();
   const location = useLocation();
-  const hideHeader = String(location.pathname || "").startsWith("/tourist/pay") || String(location.pathname || "").startsWith("/tourist/create-plan") || String(location.pathname || "").startsWith("/tourist/plans") || String(location.pathname || "").startsWith("/tourist/available-guides");
+  const pathname = String(location.pathname || "");
+  const hideHeader =
+    pathname.startsWith("/tourist/pay") ||
+    pathname.startsWith("/tourist/create-plan") ||
+    pathname.startsWith("/tourist/plans") ||
+    pathname.startsWith("/tourist/available-guides") ||
+    pathname.startsWith("/available-guides");
 
   return (
     <div className="min-h-screen flex flex-col">

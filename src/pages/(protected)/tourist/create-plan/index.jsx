@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronLeft, Loader2, Plus, Check, XCircle } from "lucide-react";
+import { Search, ChevronLeft, Loader2, Plus, Check, XCircle, CreditCard } from "lucide-react";
 import { useLanguage } from "../../../../context/LanguageContext";
 import { motion } from "framer-motion";
 import * as createPlanBackend from "./backend/createPlanBackend";
@@ -66,6 +66,27 @@ function createTimeOptions() {
 
 const TIME_OPTIONS = createTimeOptions();
 
+function readTicketPrice(destination) {
+  const fromTicketPrice = Number(destination?.ticketPrice ?? destination?.TicketPrice);
+  if (Number.isFinite(fromTicketPrice)) return Math.max(0, fromTicketPrice);
+
+  const priceText = String(destination?.price || "");
+  const fromPriceText = Number(priceText.replace(/[^\d.]/g, ""));
+  return Number.isFinite(fromPriceText) ? Math.max(0, fromPriceText) : 0;
+}
+
+function formatAmount(amount, language = "en") {
+  const value = Number(amount);
+  if (!Number.isFinite(value) || value <= 0) {
+    return language === "ar" ? "٠ جنيه" : "0 EGP";
+  }
+  return new Intl.NumberFormat(language === "ar" ? "ar-EG" : "en-EG", {
+    style: "currency",
+    currency: "EGP",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 // CreatePlan builds a custom travel plan from selected destinations and trip timing.
 export default function CreatePlan() {
   const navigate = useNavigate();
@@ -77,6 +98,7 @@ export default function CreatePlan() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
   const [saveStatus, setSaveStatus] = useState({ isOpen: false, isSuccess: false, message: "" });
+  const [bookingToConfirm, setBookingToConfirm] = useState(null);
   const [destinations, setDestinations] = useState(() => []);
   
   // Customizations for the selected plan
@@ -178,6 +200,11 @@ export default function CreatePlan() {
     });
   }, [searchQuery, customDestinations, language, destinations]);
 
+  const customPlanAmount = useMemo(
+    () => customDestinations.reduce((sum, destination) => sum + readTicketPrice(destination), 0),
+    [customDestinations]
+  );
+
   const handleSubmit = async () => {
     if (!selectedPlanId) {
       alert(t("validation.selectPlanFirst"));
@@ -207,6 +234,17 @@ export default function CreatePlan() {
     const endDate = new Date(startDate);
     endDate.setHours(endDate.getHours() + parsedDurationHours);
 
+    setBookingToConfirm({
+      selectedPlan,
+      startDate,
+      endDate,
+      amount: customPlanAmount,
+    });
+  };
+
+  const confirmCustomPlan = async () => {
+    if (!bookingToConfirm || isSubmittingPlan) return;
+    const { selectedPlan, startDate, endDate, amount } = bookingToConfirm;
     setIsSubmittingPlan(true);
     try {
       const destinationNames = customDestinations
@@ -221,6 +259,7 @@ export default function CreatePlan() {
         EndDateTime: endDate.toISOString(),
         Notes: prompt,
         Destination: destinationNames,
+        Price: amount,
       });
       const createdTripId = extractTripId(response);
       if (!createdTripId) {
@@ -235,7 +274,9 @@ export default function CreatePlan() {
         date: bookingDate,
         duration: `${parsedDurationHours}h`,
         startTime,
-        destinations: customDestinations.map(d => d.id)
+        destinations: customDestinations.map(d => d.id),
+        destinationIds: customDestinations.map(d => d.id),
+        amount,
       };
 
       localStorage.setItem("current_booking_plan", JSON.stringify(planData));
@@ -256,6 +297,7 @@ export default function CreatePlan() {
         isSuccess: true,
         message: t("createPlan.chooseGuideNext") || "Custom plan saved. Choose a guide to complete booking.",
       });
+      setBookingToConfirm(null);
     } catch (error) {
       setSaveStatus({
         isOpen: true,
@@ -333,6 +375,7 @@ export default function CreatePlan() {
             handleSubmit={handleSubmit}
             isSubmittingPlan={isSubmittingPlan}
             hasValidBookingDetails={hasValidBookingDetails}
+            customPlanAmount={customPlanAmount}
           />
         )}
 
@@ -349,6 +392,73 @@ export default function CreatePlan() {
           </div>
         )}
       </main>
+      <Modal
+        isOpen={!!bookingToConfirm}
+        onClose={() => (isSubmittingPlan ? null : setBookingToConfirm(null))}
+        title={t("booking.confirmPaymentTitle") || "Confirm Payment"}
+        maxWidth="max-w-md"
+      >
+        {bookingToConfirm && (
+          <div className="space-y-6 text-center" dir={isRTL ? "rtl" : "ltr"}>
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 bg-[#e67e22]/10 rounded-full flex items-center justify-center mb-3">
+                <CreditCard size={30} className="text-[#e67e22]" />
+              </div>
+              <h3 className="text-xl font-black text-gray-800">{bookingToConfirm.selectedPlan.title}</h3>
+              <p className="text-sm font-semibold text-gray-500 mt-1">
+                {customDestinations.length} {language === "ar" ? "أماكن" : "places"}
+              </p>
+            </div>
+
+            <div className="rounded-3xl bg-[#f7eadb]/80 border border-[#8a4b10]/10 p-6 shadow-inner">
+              <p className="text-xs font-black uppercase tracking-wider text-[#8a4b10]/80">{t("booking.amountDue")}</p>
+              <p className="mt-2 text-4xl font-black text-[#d43e0b]">
+                {formatAmount(bookingToConfirm.amount, language)}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 text-sm font-bold text-gray-600 space-y-2 text-left">
+              <div className="flex justify-between">
+                <span className="text-gray-400">{t("createPlan.dateLabel") || "Date"}:</span>
+                <span className="text-gray-800">{bookingDate}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">{t("createPlan.startTimeLabel") || "Time"}:</span>
+                <span className="text-gray-800">{startTime}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">{t("createPlan.durationLabel") || "Duration"}:</span>
+                <span className="text-gray-800">{parsedDurationHours} {t("createPlan.hours")}</span>
+              </div>
+            </div>
+
+            <p className="text-sm font-medium text-gray-500 px-2 leading-relaxed">
+              {t("booking.confirmPaymentBody", {
+                amount: formatAmount(bookingToConfirm.amount, language),
+              })}
+            </p>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setBookingToConfirm(null)}
+                disabled={isSubmittingPlan}
+                className="flex-1 rounded-2xl bg-gray-100 py-3.5 font-black text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmCustomPlan}
+                disabled={isSubmittingPlan}
+                className="flex-1 rounded-2xl bg-[#e67e22] py-3.5 font-black text-white hover:brightness-110 shadow-lg active:scale-95 transition-all disabled:opacity-50"
+              >
+                {isSubmittingPlan ? t("booking.submitting") : t("booking.confirmAndPay")}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
       <Modal
         isOpen={saveStatus.isOpen}
         onClose={() => {

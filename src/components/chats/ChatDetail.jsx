@@ -187,7 +187,7 @@ export function ChatDetail({
         )}
         
         {messages.map((msg) => {
-          const isMine = msg.sender === currentUserType;
+          const isMine = typeof msg.isMine === "boolean" ? msg.isMine : msg.sender === currentUserType;
           const isImg = isImageAttachment(msg.attachment);
 
           return (

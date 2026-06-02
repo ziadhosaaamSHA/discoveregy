@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AuthContext, useAuth } from "./authBase";
 import {
   fetchMyProfile,
@@ -24,9 +24,11 @@ export function AuthProvider({ children }) {
       return null;
     }
   });
+  const initialUserRef = useRef(user);
 
   useEffect(() => {
     let cancelled = false;
+    const storedUser = initialUserRef.current;
 
     const bootstrapAuth = async () => {
       if (!getAccessToken()) {
@@ -34,23 +36,22 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      if (user) {
-        setActiveAuthRole(user.type);
-        if (!cancelled) setIsLoading(false);
-        return;
-      }
-
       try {
         const profile = await fetchMyProfile();
         if (!cancelled) {
-          setUser(profile);
-          setActiveAuthRole(profile.type);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+          const nextProfile = { ...storedUser, ...profile };
+          setUser(nextProfile);
+          setActiveAuthRole(nextProfile.type);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProfile));
         }
       } catch {
-        clearAuthTokens();
-        localStorage.removeItem(STORAGE_KEY);
-        if (!cancelled) setUser(null);
+        if (storedUser) {
+          setActiveAuthRole(storedUser.type);
+        } else {
+          clearAuthTokens();
+          localStorage.removeItem(STORAGE_KEY);
+          if (!cancelled) setUser(null);
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -61,7 +62,7 @@ export function AuthProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, []);
 
   const login = async (email, password) => {
     try {

@@ -1,5 +1,17 @@
 import { X, Plus, Trash2, MapPin } from "lucide-react";
 
+function formatAmount(amount, language = "en") {
+  const value = Number(amount);
+  if (!Number.isFinite(value) || value <= 0) {
+    return language === "ar" ? "٠ جنيه" : "0 EGP";
+  }
+  return new Intl.NumberFormat(language === "ar" ? "ar-EG" : "en-EG", {
+    style: "currency",
+    currency: "EGP",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 export default function EditPlan({
   selectedPlan,
   setIsEditMode,
@@ -25,6 +37,7 @@ export default function EditPlan({
   handleSubmit,
   isSubmittingPlan,
   hasValidBookingDetails,
+  customPlanAmount,
 }) {
   return (
     <div className="animate-in fade-in zoom-in-95 duration-500">
@@ -61,7 +74,10 @@ export default function EditPlan({
                     <img src={dest.image} className="w-full h-full object-cover" />
                   </div>
                   <div className="p-4 flex items-center justify-between">
-                    <span className="font-bold text-gray-800">{dest.copy[language]?.name || dest.copy.en.name}</span>
+                    <div className="min-w-0">
+                      <span className="block font-bold text-gray-800 truncate">{dest.copy[language]?.name || dest.copy.en.name}</span>
+                      <span className="block text-xs font-black text-[#e67e22] mt-1">{formatAmount(dest.ticketPrice, language)}</span>
+                    </div>
                     <button
                       onClick={() => handleRemoveDest(dest.id)}
                       className="text-red-500 hover:bg-red-50 p-2 rounded-xl transition-colors"
@@ -86,6 +102,11 @@ export default function EditPlan({
           <h4 className="text-xl font-black text-[#5d4037] uppercase tracking-widest border-b border-[#5d4037]/10 pb-4">{t("createPlan.tripDetails")}</h4>
 
           <div className="space-y-6">
+            <div className="rounded-3xl bg-white px-4 py-5 shadow-sm">
+              <span className="block text-xs font-black text-[#e67e22] uppercase tracking-tighter">{t("booking.amountDue")}</span>
+              <span className="mt-1 block text-3xl font-black text-[#d43e0b]">{formatAmount(customPlanAmount, language)}</span>
+            </div>
+
             <div className="flex flex-col gap-2">
               <span className="text-xs font-black text-[#e67e22] uppercase tracking-tighter">{t("createPlan.dateLabel")}</span>
               <input type="date" value={bookingDate} disabled className="min-w-0 w-full bg-white rounded-2xl px-4 py-4 border-none outline-none shadow-sm font-bold disabled:opacity-100 disabled:text-gray-800" />

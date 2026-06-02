@@ -48,7 +48,20 @@ function resolveName(profile) {
   const firstName = profile.firstName || "";
   const lastName = profile.lastName || "";
   const fullName = `${firstName} ${lastName}`.trim();
-  return fullName || profile.name || profile.userName || profile.username || "User";
+  const candidates = [
+    fullName,
+    profile.fullName,
+    profile.displayName,
+    profile.name,
+    profile.userName,
+    profile.username,
+  ];
+
+  const name = candidates
+    .map((value) => String(value || "").trim())
+    .find((value) => value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
+
+  return name || profile.email || "User";
 }
 
 function normalizeUser(profile) {
@@ -106,10 +119,14 @@ export async function loginApi(email, password) {
     role: auth.role,
   });
 
-  if (auth.user) return auth.user;
-  const profile = await fetchMyProfile();
-  setAuthTokens({ accessToken: auth.accessToken, refreshToken: auth.refreshToken, role: profile.type });
-  return profile;
+  try {
+    const profile = await fetchMyProfile();
+    setAuthTokens({ accessToken: auth.accessToken, refreshToken: auth.refreshToken, role: profile.type });
+    return profile;
+  } catch {
+    if (auth.user) return auth.user;
+    throw new Error("Login succeeded but profile could not be loaded.");
+  }
 }
 
 export async function socialLoginApi({ token, provider }) {
@@ -130,10 +147,14 @@ export async function socialLoginApi({ token, provider }) {
     role: auth.role,
   });
 
-  if (auth.user) return auth.user;
-  const profile = await fetchMyProfile();
-  setAuthTokens({ accessToken: auth.accessToken, refreshToken: auth.refreshToken, role: profile.type });
-  return profile;
+  try {
+    const profile = await fetchMyProfile();
+    setAuthTokens({ accessToken: auth.accessToken, refreshToken: auth.refreshToken, role: profile.type });
+    return profile;
+  } catch {
+    if (auth.user) return auth.user;
+    throw new Error("Login succeeded but profile could not be loaded.");
+  }
 }
 
 export async function fetchMyProfile() {

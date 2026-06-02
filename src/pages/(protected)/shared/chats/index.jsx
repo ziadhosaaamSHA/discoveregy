@@ -16,9 +16,52 @@ const resolveAttachmentUrl = (url) => {
   return resolveApiAssetUrl(url);
 };
 
+function normalizeRole(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized.includes("guide")) return "guide";
+  if (normalized.includes("tourist") || normalized.includes("tour")) return "tourist";
+  return "";
+}
+
+function readId(...values) {
+  for (const value of values) {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return String(value);
+    }
+  }
+  return "";
+}
+
+function readName(...values) {
+  for (const value of values) {
+    const text = String(value || "").trim();
+    if (text && !/^conversation\s+\d+$/i.test(text)) return text;
+  }
+  return "";
+}
+
+function readPersonName(person) {
+  if (!person || typeof person !== "object") return "";
+  const fullName = `${person.firstName || ""} ${person.lastName || ""}`.trim();
+  return readName(
+    fullName,
+    person.fullName,
+    person.displayName,
+    person.name,
+    person.userName,
+    person.username,
+    person.email
+  );
+}
+
+function isFallbackConversationName(name, id) {
+  const text = String(name || "").trim();
+  return !text || text.toLowerCase() === `conversation ${id}`.toLowerCase();
+}
+
 function normalizeMessages(payload, user) {
-  const currentUserType = user?.type || "tourist";
-  const currentUserId = user?.id || null;
+  const currentUserType = normalizeRole(user?.type) || "tourist";
+  const currentUserId = readId(user?.id, user?.userId);
   const source = Array.isArray(payload)
     ? payload
     : Array.isArray(payload?.items)
@@ -29,25 +72,32 @@ function normalizeMessages(payload, user) {
 
   return source.map((msg) => {
     const createdAt = msg?.createdAt || msg?.timestamp || msg?.sentAt || new Date().toISOString();
-    const senderType = String(msg?.senderType ?? msg?.senderRole ?? msg?.sender?.role ?? "").toLowerCase();
-    
-    const isMine = Boolean(msg?.isMine) ||
-                   (currentUserId && String(msg?.senderId) === String(currentUserId)) ||
-                   (currentUserId && String(msg?.sender?.id) === String(currentUserId)) ||
-                   (currentUserId && String(msg?.userId) === String(currentUserId)) ||
-                   (msg?.sender === currentUserType && !msg?.isSystem);
+    const senderId = readId(msg?.senderId, msg?.senderUserId, msg?.fromUserId, msg?.userId, msg?.sender?.id, msg?.sender?.userId);
+    const receiverId = readId(msg?.receiverId, msg?.receiverUserId, msg?.toUserId, msg?.recipientId, msg?.receiver?.id, msg?.receiver?.userId);
+    const senderType = normalizeRole(msg?.senderType ?? msg?.senderRole ?? msg?.sender?.role ?? msg?.sender?.type ?? msg?.sender);
+    const receiverType = normalizeRole(msg?.receiverType ?? msg?.receiverRole ?? msg?.receiver?.role ?? msg?.receiver?.type);
 
-    const sender = isMine
-      ? currentUserType
-      : senderType.includes("guide")
-        ? "guide"
-        : senderType.includes("tourist")
-          ? "tourist"
-          : currentUserType === "guide" ? "tourist" : "guide";
+    let isMine = false;
+    if (typeof msg?.isMine === "boolean") {
+      isMine = msg.isMine;
+    } else if (currentUserId && senderId) {
+      isMine = senderId === currentUserId;
+    } else if (currentUserId && receiverId) {
+      isMine = receiverId !== currentUserId;
+    } else if (senderType) {
+      isMine = senderType === currentUserType;
+    } else if (receiverType) {
+      isMine = receiverType !== currentUserType;
+    }
+
+    const sender = senderType || (isMine ? currentUserType : currentUserType === "guide" ? "tourist" : "guide");
     return {
       id: String(msg?.id ?? `${Date.now()}-${Math.random()}`),
       text: msg?.content || msg?.text || "",
       sender,
+      isMine,
+      senderId,
+      receiverId,
       timestamp: new Date(createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       attachment: msg?.attachment ? {
         name: msg.attachment.name || "File",
@@ -62,10 +112,11 @@ function extractArray(payload) {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.items)) return payload.items;
   if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.result)) return payload.result;
   return [];
 }
 
-function normalizeConversation(raw) {
+function normalizeConversation(raw, user) {
   const conversationId =
     raw?.conversationId ??
     raw?.conversation?.id ??
@@ -74,17 +125,18 @@ function normalizeConversation(raw) {
 
   if (conversationId === null || conversationId === undefined) return null;
   const id = String(conversationId);
-  const touristName =
-    raw?.touristName ??
-    raw?.touristFullName ??
-    raw?.tourist?.name ??
-    raw?.tourist?.fullName ??
-    raw?.guideName ??
-    raw?.guideFullName ??
-    raw?.guide?.name ??
-    raw?.guide?.fullName ??
-    raw?.name ??
-    `Conversation ${id}`;
+  const currentUserType = normalizeRole(user?.type) || "tourist";
+  const guideName = readName(raw?.guideName, raw?.guideFullName, readPersonName(raw?.guide));
+  const touristName = readName(raw?.touristName, raw?.touristFullName, readPersonName(raw?.tourist));
+  const otherUserName = readName(
+    raw?.otherUserName,
+    raw?.otherUserFullName,
+    readPersonName(raw?.otherUser),
+    readPersonName(raw?.participant),
+    readPersonName(raw?.user)
+  );
+  const participantName = currentUserType === "guide" ? touristName : guideName;
+  const displayName = readName(participantName, otherUserName, guideName, touristName, raw?.name, raw?.title) || `Conversation ${id}`;
   const lastMessage =
     raw?.lastMessage ??
     raw?.latestMessage ??
@@ -93,16 +145,52 @@ function normalizeConversation(raw) {
 
   const guideImage = raw?.guide?.imageUrl || raw?.guideImageUrl || raw?.imageUrl || null;
   const touristImage = raw?.tourist?.imageUrl || raw?.touristImageUrl || null;
-  const rawImage = guideImage || touristImage || null;
+  const rawImage = currentUserType === "guide" ? touristImage || guideImage : guideImage || touristImage;
   const image = rawImage ? resolveApiAssetUrl(rawImage) : null;
+  const guideId = readId(raw?.guideId, raw?.guideUserId, raw?.guide?.id, raw?.guide?.userId);
+  const touristId = readId(raw?.touristId, raw?.touristUserId, raw?.tourist?.id, raw?.tourist?.userId);
+  const otherUserId = readId(raw?.otherUserId, raw?.otherUser?.id, raw?.otherUser?.userId, raw?.participant?.id, raw?.participant?.userId);
 
   return {
     id,
-    touristName,
+    touristName: displayName,
     lastMessage,
     unread: false,
     image,
+    guideId,
+    touristId,
+    otherUserId,
   };
+}
+
+async function hydrateConversationName(conversation, user) {
+  if (!isFallbackConversationName(conversation?.touristName, conversation?.id)) return conversation;
+  const numericId = Number(conversation.id);
+  if (!Number.isFinite(numericId)) return conversation;
+
+  try {
+    const details = await tourismApi.getConversationById(numericId);
+    const normalizedDetails = normalizeConversation(details, user);
+    if (normalizedDetails && !isFallbackConversationName(normalizedDetails.touristName, normalizedDetails.id)) {
+      return { ...conversation, ...normalizedDetails };
+    }
+  } catch {
+    // Try participant IDs below.
+  }
+
+  const currentUserType = normalizeRole(user?.type) || "tourist";
+  const participantId = conversation.otherUserId || (currentUserType === "guide" ? conversation.touristId : conversation.guideId);
+  if (!participantId) return conversation;
+
+  try {
+    const person = await tourismApi.getUserById(participantId);
+    const name = readPersonName(person?.data && typeof person.data === "object" ? person.data : person);
+    if (name) return { ...conversation, touristName: name };
+  } catch {
+    return conversation;
+  }
+
+  return conversation;
 }
 
 // Chats renders the conversation list and the selected conversation detail pane.
@@ -128,12 +216,12 @@ export default function Chats() {
     const loadConversations = async () => {
       setIsLoadingConversations(true);
       setConversationsError("");
-      const stored = readStoredConversations().map(normalizeConversation).filter(Boolean);
+      const stored = readStoredConversations().map((conversation) => normalizeConversation(conversation, user)).filter(Boolean);
       let backendConversations = [];
 
       try {
         const response = await tourismApi.getConversations();
-        backendConversations = extractArray(response).map(normalizeConversation).filter(Boolean);
+        backendConversations = extractArray(response).map((conversation) => normalizeConversation(conversation, user)).filter(Boolean);
       } catch (error) {
         if (!cancelled) {
           setConversations([]);
@@ -144,12 +232,17 @@ export default function Chats() {
       }
 
       const byId = new Map();
-      [...backendConversations, ...stored].forEach((conversation) => {
+      [...stored, ...backendConversations].forEach((conversation) => {
         if (!conversation?.id) return;
+        const existing = byId.get(String(conversation.id));
+        const nextName = isFallbackConversationName(conversation.touristName, conversation.id) && existing?.touristName
+          ? existing.touristName
+          : conversation.touristName;
         byId.set(String(conversation.id), {
-          ...byId.get(String(conversation.id)),
+          ...existing,
           ...conversation,
           id: String(conversation.id),
+          touristName: nextName,
         });
       });
 
@@ -157,17 +250,21 @@ export default function Chats() {
       const updated = await Promise.all(
         merged.map(async (conversation) => {
           const numericId = Number(conversation.id);
-          if (!Number.isFinite(numericId)) return conversation;
+          let hydratedConversation = conversation;
+          if (isFallbackConversationName(hydratedConversation.touristName, hydratedConversation.id)) {
+            hydratedConversation = await hydrateConversationName(hydratedConversation, user);
+          }
+          if (!Number.isFinite(numericId)) return hydratedConversation;
           try {
             const response = await tourismApi.getMessages(numericId);
             const normalized = normalizeMessages(response, user);
             const last = normalized[normalized.length - 1];
             return {
-              ...conversation,
-              lastMessage: last?.text || conversation.lastMessage || "",
+              ...hydratedConversation,
+              lastMessage: last?.text || hydratedConversation.lastMessage || "",
             };
           } catch {
-            return conversation;
+            return hydratedConversation;
           }
         })
       );
@@ -182,7 +279,7 @@ export default function Chats() {
     return () => {
       cancelled = true;
     };
-  }, [user?.type]);
+  }, [user]);
 
   useEffect(() => {
     if (conversationId && !selectedConversation && conversations.length > 0) {
@@ -223,7 +320,7 @@ export default function Chats() {
     return () => {
       cancelled = true;
     };
-  }, [selectedConversation]);
+  }, [selectedConversation, user]);
 
   // Lock body scroll when chat is open
   useEffect(() => {
@@ -271,6 +368,8 @@ export default function Chats() {
       id: `${Date.now()}`,
       text: content,
       sender: user?.type === "guide" ? "guide" : "tourist",
+      isMine: true,
+      senderId: readId(user?.id, user?.userId),
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       attachment,
     };
