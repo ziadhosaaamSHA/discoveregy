@@ -8,8 +8,17 @@ import { ConversationItem } from "../../../../components/chats/ConversationItem"
 import { ChatDetail } from "../../../../components/chats/ChatDetail";
 import { tourismApi } from "../../../../services/tourism-api";
 import { readStoredConversations, upsertStoredConversation } from "../../../../services/conversations-store";
+import { resolveApiAssetUrl } from "../../../../services/api-client";
 
-function normalizeMessages(payload) {
+const resolveAttachmentUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("blob:") || url.startsWith("data:")) return url;
+  return resolveApiAssetUrl(url);
+};
+
+function normalizeMessages(payload, user) {
+  const currentUserType = user?.type || "tourist";
+  const currentUserId = user?.id || null;
   const source = Array.isArray(payload)
     ? payload
     : Array.isArray(payload?.items)
@@ -20,11 +29,31 @@ function normalizeMessages(payload) {
 
   return source.map((msg) => {
     const createdAt = msg?.createdAt || msg?.timestamp || msg?.sentAt || new Date().toISOString();
+    const senderType = String(msg?.senderType ?? msg?.senderRole ?? msg?.sender?.role ?? "").toLowerCase();
+    
+    const isMine = Boolean(msg?.isMine) ||
+                   (currentUserId && String(msg?.senderId) === String(currentUserId)) ||
+                   (currentUserId && String(msg?.sender?.id) === String(currentUserId)) ||
+                   (currentUserId && String(msg?.userId) === String(currentUserId)) ||
+                   (msg?.sender === currentUserType && !msg?.isSystem);
+
+    const sender = isMine
+      ? currentUserType
+      : senderType.includes("guide")
+        ? "guide"
+        : senderType.includes("tourist")
+          ? "tourist"
+          : currentUserType === "guide" ? "tourist" : "guide";
     return {
       id: String(msg?.id ?? `${Date.now()}-${Math.random()}`),
       text: msg?.content || msg?.text || "",
-      sender: msg?.isMine || msg?.senderType === "Guide" ? "guide" : "tourist",
+      sender,
       timestamp: new Date(createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      attachment: msg?.attachment ? {
+        name: msg.attachment.name || "File",
+        type: msg.attachment.type || "application/octet-stream",
+        url: resolveAttachmentUrl(msg.attachment.url),
+      } : null,
     };
   });
 }
@@ -47,9 +76,13 @@ function normalizeConversation(raw) {
   const id = String(conversationId);
   const touristName =
     raw?.touristName ??
+    raw?.touristFullName ??
     raw?.tourist?.name ??
+    raw?.tourist?.fullName ??
     raw?.guideName ??
+    raw?.guideFullName ??
     raw?.guide?.name ??
+    raw?.guide?.fullName ??
     raw?.name ??
     `Conversation ${id}`;
   const lastMessage =
@@ -58,11 +91,17 @@ function normalizeConversation(raw) {
     raw?.title ??
     "";
 
+  const guideImage = raw?.guide?.imageUrl || raw?.guideImageUrl || raw?.imageUrl || null;
+  const touristImage = raw?.tourist?.imageUrl || raw?.touristImageUrl || null;
+  const rawImage = guideImage || touristImage || null;
+  const image = rawImage ? resolveApiAssetUrl(rawImage) : null;
+
   return {
     id,
     touristName,
     lastMessage,
     unread: false,
+    image,
   };
 }
 
@@ -93,13 +132,8 @@ export default function Chats() {
       let backendConversations = [];
 
       try {
-        if (user?.type === "guide") {
-          const response = await tourismApi.getGuideRequests();
-          backendConversations = extractArray(response).map(normalizeConversation).filter(Boolean);
-        } else {
-          const response = await tourismApi.getBookings();
-          backendConversations = extractArray(response).map(normalizeConversation).filter(Boolean);
-        }
+        const response = await tourismApi.getConversations();
+        backendConversations = extractArray(response).map(normalizeConversation).filter(Boolean);
       } catch (error) {
         if (!cancelled) {
           setConversations([]);
@@ -126,7 +160,7 @@ export default function Chats() {
           if (!Number.isFinite(numericId)) return conversation;
           try {
             const response = await tourismApi.getMessages(numericId);
-            const normalized = normalizeMessages(response);
+            const normalized = normalizeMessages(response, user);
             const last = normalized[normalized.length - 1];
             return {
               ...conversation,
@@ -172,7 +206,7 @@ export default function Chats() {
       try {
         setIsLoadingMessages(true);
         const response = await tourismApi.getMessages(numericId);
-        const normalized = normalizeMessages(response);
+        const normalized = normalizeMessages(response, user);
         if (!cancelled) {
           setMessages(normalized);
           tourismApi.markMessagesRead(numericId).catch(() => {});
@@ -201,6 +235,14 @@ export default function Chats() {
     return () => { document.body.style.overflow = 'unset'; };
   }, [selectedConversation]);
 
+  const handleDeleteChat = (id) => {
+    const current = readStoredConversations();
+    const next = current.filter((item) => String(item.id) !== String(id));
+    localStorage.setItem("degy_conversations", JSON.stringify(next));
+    setConversations((prev) => prev.filter((item) => String(item.id) !== String(id)));
+    navigate("/chats");
+  };
+
   const handleClearAll = () => {
     localStorage.removeItem("degy_conversations");
     setConversations([]);
@@ -220,7 +262,7 @@ export default function Chats() {
     navigate("/chats");
   };
 
-  const handleSendMessage = async ({ content }) => {
+  const handleSendMessage = async ({ content, attachment }) => {
     if (!selectedConversation) return;
     const numericId = Number(selectedConversation.id);
     if (!Number.isFinite(numericId)) return;
@@ -230,6 +272,7 @@ export default function Chats() {
       text: content,
       sender: user?.type === "guide" ? "guide" : "tourist",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      attachment,
     };
     setMessages((prev) => [...prev, optimistic]);
 
@@ -237,6 +280,11 @@ export default function Chats() {
       await tourismApi.sendMessage({
         conversationId: numericId,
         content,
+        attachment: attachment ? {
+          name: attachment.name,
+          type: attachment.type,
+          url: attachment.url,
+        } : undefined,
       });
 
       setConversations((prev) =>
@@ -332,7 +380,9 @@ export default function Chats() {
               onBack={handleBackToList}
               messages={messages}
               onSendMessage={handleSendMessage}
+              onDeleteChat={handleDeleteChat}
               isLoading={isLoadingMessages}
+              currentUserType={user?.type === "guide" ? "guide" : "tourist"}
             />
           </motion.div>
         )}

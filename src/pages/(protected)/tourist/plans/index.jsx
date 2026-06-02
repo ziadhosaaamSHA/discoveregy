@@ -7,9 +7,11 @@ import { BookingSettings } from "./components/BookingSettings";
 import { BookingStatusModal } from "./components/BookingStatusModal";
 import { PlansGrid } from "./components/PlansGrid";
 import { PlansHeader } from "./components/PlansHeader";
+import { CreditCard } from "lucide-react";
 import { RecommendedDestinationBanner } from "./components/RecommendedDestinationBanner";
 import {
   extractBookingId,
+  formatAmount,
   getSavedDurationHours,
   getSavedStartTime,
   mapPaymentMethod,
@@ -41,6 +43,7 @@ export default function Plans() {
   const [plansError, setPlansError] = useState("");
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
   const [bookingStatus, setBookingStatus] = useState({ isOpen: false, isSuccess: false, message: "" });
+  const [bookingToConfirm, setBookingToConfirm] = useState(null);
   const bookingInfo = useMemo(() => readBookingInfo(), []);
   const bookingDate = String(bookingInfo.date || "");
   const parsedDurationHours = Number(durationHours);
@@ -133,7 +136,12 @@ export default function Plans() {
   const activePlanId = selectedPlanId || autoSelectedPlanId;
   const activePlan = plans.find((plan) => plan.id === activePlanId) || null;
   const isPlansLoading = isLoadingPlans || isLoadingDestinations || hasLoadingDelay;
-  const [showOtherTrips, setShowOtherTrips] = useState(false);
+  const [activeTab, setActiveTab] = useState("matching"); // "matching" | "all"
+
+  const displayedPlans = useMemo(() => {
+    if (!destId) return plans;
+    return activeTab === "matching" ? filteredPlans : plans;
+  }, [destId, activeTab, filteredPlans, plans]);
 
   // Plans that do NOT reference the selected destination
   const otherPlans = useMemo(() => {
@@ -169,26 +177,26 @@ export default function Plans() {
     };
   }, [activePlan, tripDetailsById]);
 
-  const handleSubmit = async () => {
+  const buildBookingDraft = () => {
     if (!activePlanId) {
       alert(t("validation.selectPlanFirst"));
-      return;
+      return null;
     }
 
     if (!hasValidBookingDetails) {
       alert(t("validation.fillAllFields"));
-      return;
+      return null;
     }
     
     const selectedPlan = plans.find((plan) => plan.id === activePlanId);
     if (!selectedPlan) {
       alert(t("validation.selectPlanFirst"));
-      return;
+      return null;
     }
     const startDate = parseBookingDateTime(bookingDate, startTime);
     if (!startDate) {
       alert(t("validation.fillAllFields"));
-      return;
+      return null;
     }
     const endDate = new Date(startDate);
     endDate.setHours(endDate.getHours() + parsedDurationHours);
@@ -204,9 +212,25 @@ export default function Plans() {
       destinationIds: selectedDestinations,
       date: bookingDate,
       duration: `${parsedDurationHours}h`,
-      startTime
+      startTime,
+      amount: selectedPlan.price,
+      guideId: selectedPlan.guideId,
+      guideName: selectedPlan.guideName,
     };
-    
+
+    return { selectedPlan, startDate, endDate, planData };
+  };
+
+  const handleSubmit = () => {
+    const draft = buildBookingDraft();
+    if (!draft) return;
+    setBookingToConfirm(draft);
+  };
+
+  const confirmBooking = async () => {
+    if (!bookingToConfirm || isSubmittingBooking) return;
+    const { selectedPlan, startDate, endDate, planData } = bookingToConfirm;
+
     localStorage.setItem("current_booking_plan", JSON.stringify(planData));
     localStorage.setItem(
       "user_booking_info",
@@ -220,14 +244,7 @@ export default function Plans() {
     try {
       const bookingResponse = await plansBackend.createBooking({
         planId: selectedPlan.tripId,
-        guideId: (() => {
-          try {
-            const stored = JSON.parse(localStorage.getItem("selected_guide") || "null");
-            return stored && stored.id ? stored.id : null;
-          } catch {
-            return null;
-          }
-        })(),
+        guideId: selectedPlan.guideId || null,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         numberOfPeople: Number(bookingInfo.numberOfPeople || 1),
@@ -244,8 +261,11 @@ export default function Plans() {
       setBookingStatus({
         isOpen: true,
         isSuccess: true,
-        message: t("booking.confirmedTitle") || "Booking confirmed.",
+        message: t("booking.confirmedWithAmount", {
+          amount: formatAmount(selectedPlan.price, language),
+        }) || "Booking confirmed.",
       });
+      setBookingToConfirm(null);
     } catch (error) {
       setBookingStatus({
         isOpen: true,
@@ -318,69 +338,45 @@ export default function Plans() {
   };
 
   return (
-    <div className="min-h-screen bg-[#ead9c5] px-4 py-5 text-black font-sans pb-20" dir={isRTL ? "rtl" : "ltr"}>
+    <div className="min-h-screen bg-[#ead9c5] px-4 py-5 text-black font-sans pb-36" dir={isRTL ? "rtl" : "ltr"}>
       <PlansHeader
         isRTL={isRTL}
         navigate={navigate}
         title={t("plans.title")}
         createLabel={t("createPlan.title")}
+        destId={destId}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        t={t}
+        language={language}
       />
 
       <RecommendedDestinationBanner destination={contextDest} language={language} isRTL={isRTL} t={t} />
       <div className="max-w-6xl mx-auto px-2">
-        <div className="flex items-center justify-end mb-4">
-          <button
-            type="button"
-            onClick={() => setShowOtherTrips((s) => !s)}
-            className="inline-flex items-center gap-2 rounded-md bg-white/90 px-3 py-1.5 text-sm font-medium text-primary shadow-sm hover:bg-white"
-            aria-pressed={showOtherTrips}
-          >
-            {showOtherTrips ? (t("plans.hideOtherTrips") || (language === "ar" ? "إخفاء الرحلات الأخرى" : "Hide other trips")) : (t("plans.showOtherTrips") || (language === "ar" ? "عرض رحلات أخرى" : "Show other trips"))}
-          </button>
-        </div>
-
-        <main className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-16">
-        <PlansGrid
-          plans={filteredPlans}
-          destId={destId}
-          navigate={navigate}
-          isLoading={isPlansLoading}
-          plansError={plansError}
-          activePlanId={activePlanId}
-          tripDetailsById={tripDetailsById}
-          destinationMap={destinationMap}
-          deletingPlanId={deletingPlanId}
-          isRTL={isRTL}
-          language={language}
-          t={t}
-          onSelectPlan={setSelectedPlanId}
-          onDeletePlan={handleDeletePlan}
-        />
+        <main
+          className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8 overflow-y-auto max-h-[calc(100vh-360px)] pr-2 pb-8 scrollbar-thin"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#c59d75 transparent'
+          }}
+        >
+          <PlansGrid
+            plans={displayedPlans}
+            destId={activeTab === "matching" ? destId : null}
+            navigate={navigate}
+            isLoading={isPlansLoading}
+            plansError={plansError}
+            activePlanId={activePlanId}
+            tripDetailsById={tripDetailsById}
+            destinationMap={destinationMap}
+            deletingPlanId={deletingPlanId}
+            isRTL={isRTL}
+            language={language}
+            t={t}
+            onSelectPlan={setSelectedPlanId}
+            onDeletePlan={handleDeletePlan}
+          />
         </main>
-
-        {showOtherTrips && (
-          <section className="mt-8">
-            <h3 className="mb-4 text-lg font-semibold">{t("plans.otherTripsTitle") || (language === "ar" ? "رحلات أخرى" : "Other trips")}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <PlansGrid
-                plans={otherPlans}
-                destId={null}
-                navigate={navigate}
-                isLoading={isPlansLoading}
-                plansError={plansError}
-                activePlanId={activePlanId}
-                tripDetailsById={tripDetailsById}
-                destinationMap={destinationMap}
-                deletingPlanId={deletingPlanId}
-                isRTL={isRTL}
-                language={language}
-                t={t}
-                onSelectPlan={setSelectedPlanId}
-                onDeletePlan={handleDeletePlan}
-              />
-            </div>
-          </section>
-        )}
       </div>
 
       <BookingSettings
@@ -395,9 +391,82 @@ export default function Plans() {
         onDurationChange={setDurationHours}
         onStartTimeChange={setStartTime}
         onSubmit={handleSubmit}
+        activePlan={activePlan}
+        language={language}
       />
 
       <BookingStatusModal bookingStatus={bookingStatus} t={t} onClose={closeBookingStatus} />
+
+      <Modal
+        isOpen={!!bookingToConfirm}
+        onClose={() => (isSubmittingBooking ? null : setBookingToConfirm(null))}
+        title={t("booking.confirmPaymentTitle") || "Confirm Payment"}
+        maxWidth="max-w-md"
+      >
+        {bookingToConfirm && (
+          <div className="space-y-6 text-center" dir={isRTL ? "rtl" : "ltr"}>
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 bg-[#e67e22]/10 rounded-full flex items-center justify-center mb-3">
+                <CreditCard size={30} className="text-[#e67e22]" />
+              </div>
+              <h3 className="text-xl font-black text-gray-800">{bookingToConfirm.planData.title}</h3>
+              {bookingToConfirm.selectedPlan.guideName && (
+                <p className="text-sm font-semibold text-gray-500 mt-1">
+                  {t("booking.withGuide") || "With Guide"}: {bookingToConfirm.selectedPlan.guideName}
+                </p>
+              )}
+            </div>
+
+            <div className="rounded-3xl bg-[#f7eadb]/80 border border-[#8a4b10]/10 p-6 shadow-inner">
+              <p className="text-xs font-black uppercase tracking-wider text-[#8a4b10]/80">{t("booking.amountDue")}</p>
+              <p className="mt-2 text-4xl font-black text-[#d43e0b]">
+                {formatAmount(bookingToConfirm.selectedPlan.price, language)}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 text-sm font-bold text-gray-600 space-y-2 text-left">
+              <div className="flex justify-between">
+                <span className="text-gray-400">{t("createPlan.dateLabel") || "Date"}:</span>
+                <span className="text-gray-800">{bookingDate}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">{t("createPlan.startTimeLabel") || "Time"}:</span>
+                <span className="text-gray-800">{startTime}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">{t("createPlan.durationLabel") || "Duration"}:</span>
+                <span className="text-gray-800">{parsedDurationHours} {t("createPlan.hours")}</span>
+              </div>
+            </div>
+
+            <p className="text-sm font-medium text-gray-500 px-2 leading-relaxed">
+              {t("booking.confirmPaymentBody", {
+                amount: formatAmount(bookingToConfirm.selectedPlan.price, language),
+              })}
+            </p>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setBookingToConfirm(null)}
+                disabled={isSubmittingBooking}
+                className="flex-1 rounded-2xl bg-gray-100 py-3.5 font-black text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmBooking}
+                disabled={isSubmittingBooking}
+                className="flex-1 rounded-2xl bg-[#e67e22] py-3.5 font-black text-white hover:brightness-110 shadow-lg active:scale-95 transition-all disabled:opacity-50"
+              >
+                {isSubmittingBooking ? t("booking.submitting") : t("booking.confirmAndPay")}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
 
       <Modal
         isOpen={!!planToDelete}

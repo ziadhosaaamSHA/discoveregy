@@ -16,6 +16,15 @@ import {
   parseDurationDays,
 } from "./components/guideMappers";
 
+function parseBookingDateTime(dateValue, timeValue) {
+  const parsedDate = String(dateValue || "").trim();
+  const parsedTime = String(timeValue || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(parsedDate)) return null;
+  if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(parsedTime)) return null;
+  const result = new Date(`${parsedDate}T${parsedTime}:00`);
+  return Number.isNaN(result.getTime()) ? null : result;
+}
+
 // AvailableGuides lists bookable guides and starts guide chat or booking actions.
 export default function AvailableGuides() {
   const { language, isRTL, t } = useLanguage();
@@ -24,6 +33,7 @@ export default function AvailableGuides() {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [guides, setGuides] = useState([]);
   const [isLoadingGuides, setIsLoadingGuides] = useState(true);
+  const [isBookingGuide, setIsBookingGuide] = useState(false);
   const [guidesError, setGuidesError] = useState("");
 
   useEffect(() => {
@@ -38,19 +48,28 @@ export default function AvailableGuides() {
         if (!cancelled) {
           setGuides(apiGuides);
         }
-        return;
+        if (apiGuides.length > 0) return;
       } catch {
         // Fallback to users list when guides endpoint is unavailable.
       }
 
       try {
-        const usersResponse = await tourismApi.getUsers();
-        const users = extractArray(usersResponse);
-        const guideUsers = users.filter((user) => {
-          const role = String(user?.role ?? user?.userRole ?? user?.type ?? "").toLowerCase();
-          return role === "guide";
+        const tripsResponse = await tourismApi.getTrips();
+        const trips = extractArray(tripsResponse).filter((trip) => trip?.guideId);
+        const byGuideId = new Map();
+        trips.forEach((trip) => {
+          if (!byGuideId.has(String(trip.guideId))) {
+            byGuideId.set(String(trip.guideId), normalizeGuide({
+              id: trip.guideId,
+              guideId: trip.guideId,
+              name: trip.guideName,
+              specialty: trip.title,
+              imageUrl: trip.imageUrl,
+              rating: 4.8,
+            }));
+          }
         });
-        const normalizedGuides = guideUsers.map(normalizeGuide).filter((guide) => guide.id);
+        const normalizedGuides = Array.from(byGuideId.values()).filter((guide) => guide.id);
         if (!cancelled) {
           setGuides(normalizedGuides);
         }
@@ -100,45 +119,29 @@ export default function AvailableGuides() {
   };
 
   const handleBook = async (guide) => {
+    if (isBookingGuide) return;
+    setIsBookingGuide(true);
     setSelectedGuide(guide);
-    const bookingPlan = JSON.parse(localStorage.getItem("current_booking_plan") || "{}");
-    const upcomingTrips = JSON.parse(localStorage.getItem("upcoming_trips") || "[]");
-    const conversationId = await ensureConversation(guide);
-
-    const tripTypeObj = typeof bookingPlan.title === 'string' 
-      ? { [language]: bookingPlan.title, [language === 'ar' ? 'en' : 'ar']: bookingPlan.title }
-      : { en: "Custom Plan", ar: "خطة مخصصة" };
-
-    const dateObj = typeof bookingPlan.date === 'string'
-      ? { [language]: bookingPlan.date, [language === 'ar' ? 'en' : 'ar']: bookingPlan.date }
-      : { en: "Pending confirmation", ar: "في انتظار التأكيد" };
-
-    upcomingTrips.push({
-      id: Date.now().toString(),
-      guideName: guide.name, 
-      guideImage: guide.image,
-      tripType: tripTypeObj,
-      date: dateObj,
-      conversationId: conversationId ?? `conv-${guide.id}`
-    });
-    // Persist the selected guide so other flows (e.g., booking from Plans) can use it
     try {
+      const bookingPlan = JSON.parse(localStorage.getItem("current_booking_plan") || "{}");
+      const bookingInfo = JSON.parse(localStorage.getItem("user_booking_info") || "{}");
       localStorage.setItem("selected_guide", JSON.stringify(guide));
-    } catch (e) {
-      // ignore storage errors
-    }
-    localStorage.setItem("upcoming_trips", JSON.stringify(upcomingTrips));
 
-    const bookingInfo = JSON.parse(localStorage.getItem("user_booking_info") || "{}");
-    const baseDate = parseDateString(bookingPlan.date) || new Date();
-    const durationDays = parseDurationDays(bookingPlan.duration);
-    const startDate = new Date(baseDate);
-    const endDate = new Date(baseDate);
-    endDate.setDate(endDate.getDate() + durationDays);
+      const conversationId = await ensureConversation(guide);
+      const startDate =
+        parseBookingDateTime(bookingPlan.date, bookingPlan.startTime || bookingInfo.startTime) ||
+        parseDateString(bookingPlan.date) ||
+        new Date();
+      const endDate = new Date(startDate);
+      const durationHours = Number(bookingInfo.durationHours || String(bookingPlan.duration || "").match(/\d+/)?.[0] || 0);
+      if (Number.isFinite(durationHours) && durationHours > 0) {
+        endDate.setHours(endDate.getHours() + durationHours);
+      } else {
+        endDate.setDate(endDate.getDate() + parseDurationDays(bookingPlan.duration));
+      }
 
-    if (selectedTripId) {
-      tourismApi
-        .createBooking({
+      if (selectedTripId && !localStorage.getItem("current_booking_id")) {
+        const bookingResponse = await tourismApi.createBooking({
           planId: selectedTripId,
           guideId: guide.id || null,
           startDate: startDate.toISOString(),
@@ -146,27 +149,47 @@ export default function AvailableGuides() {
           numberOfPeople: Number(bookingInfo.numberOfPeople || 1),
           paymentMethod: mapPaymentMethod(bookingInfo.paymentMethod),
           usePoints: false,
-        })
-        .then((bookingResponse) => {
-          const bookingId = extractBookingId(bookingResponse);
-          if (bookingId) {
-            localStorage.setItem("current_booking_id", String(bookingId));
-            if (mapPaymentMethod(bookingInfo.paymentMethod) === "Visa") {
-              tourismApi.payBooking({ bookingId }).catch(() => {});
-            }
+        });
+        const bookingId = extractBookingId(bookingResponse);
+        if (bookingId) {
+          localStorage.setItem("current_booking_id", String(bookingId));
+          if (mapPaymentMethod(bookingInfo.paymentMethod) === "Visa") {
+            await tourismApi.payBooking({ bookingId });
           }
-        })
-        .catch(() => {});
-    }
+        }
+      }
 
-    if (selectedTripId && guide.id) {
-      tourismApi.createGuideRequest({
-        tripId: selectedTripId,
-        guideId: guide.id,
-      }).catch(() => {});
-    }
+      if (selectedTripId && guide.id) {
+        tourismApi.createGuideRequest({
+          tripId: selectedTripId,
+          guideId: guide.id,
+        }).catch(() => {});
+      }
 
-    setIsSuccessModalOpen(true);
+      const upcomingTrips = JSON.parse(localStorage.getItem("upcoming_trips") || "[]");
+      const tripTypeObj = typeof bookingPlan.title === 'string' 
+        ? { [language]: bookingPlan.title, [language === 'ar' ? 'en' : 'ar']: bookingPlan.title }
+        : { en: "Custom Plan", ar: "خطة مخصصة" };
+
+      const dateObj = typeof bookingPlan.date === 'string'
+        ? { [language]: bookingPlan.date, [language === 'ar' ? 'en' : 'ar']: bookingPlan.date }
+        : { en: "Pending confirmation", ar: "في انتظار التأكيد" };
+
+      upcomingTrips.push({
+        id: localStorage.getItem("current_booking_id") || Date.now().toString(),
+        guideName: guide.name, 
+        guideImage: guide.image,
+        tripType: tripTypeObj,
+        date: dateObj,
+        conversationId: conversationId ?? `conv-${guide.id}`
+      });
+      localStorage.setItem("upcoming_trips", JSON.stringify(upcomingTrips));
+      setIsSuccessModalOpen(true);
+    } catch (error) {
+      setGuidesError(error?.message || t("availableGuides.bookingFailed"));
+    } finally {
+      setIsBookingGuide(false);
+    }
   };
 
   const handleChat = async (guide) => {
@@ -209,6 +232,7 @@ export default function AvailableGuides() {
                   onBook={handleBook}
                   onChat={handleChat}
                   language={language}
+                  isBooking={isBookingGuide && selectedGuide?.id === guide.id}
                 />
               ))
             )}

@@ -12,7 +12,7 @@ export function normalizeGuide(guide) {
   const firstName = guide?.firstName || "";
   const lastName = guide?.lastName || "";
   const fullName = `${firstName} ${lastName}`.trim();
-  const name = fullName || guide?.name || guide?.userName || "Guide";
+  const name = fullName || guide?.fullName || guide?.name || guide?.userName || guide?.guideName || "Guide";
 
   return {
     id,

@@ -8,7 +8,7 @@ import { useLanguage } from "../../../context/LanguageContext";
 export default function TouristLayout() {
   const { t, isRTL } = useLanguage();
   const location = useLocation();
-  const hideHeader = String(location.pathname || "").startsWith("/tourist/pay");
+  const hideHeader = String(location.pathname || "").startsWith("/tourist/pay") || String(location.pathname || "").startsWith("/tourist/create-plan") || String(location.pathname || "").startsWith("/tourist/plans") || String(location.pathname || "").startsWith("/tourist/available-guides");
 
   return (
     <div className="min-h-screen flex flex-col">

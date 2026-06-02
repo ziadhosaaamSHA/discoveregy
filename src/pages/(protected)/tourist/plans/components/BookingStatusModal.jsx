@@ -1,4 +1,6 @@
 import { Modal } from "../../../../../components/common/Modal";
+import { Check, XCircle } from "lucide-react";
+import { motion } from "framer-motion";
 
 // BookingStatusModal centralizes success/failure messaging after booking submit.
 export function BookingStatusModal({ bookingStatus, t, onClose }) {
@@ -6,19 +8,49 @@ export function BookingStatusModal({ bookingStatus, t, onClose }) {
     <Modal
       isOpen={bookingStatus.isOpen}
       onClose={onClose}
-      title={bookingStatus.isSuccess ? (t("booking.confirmedTitle") || "Booking confirmed") : "Booking failed"}
+      title=""
       maxWidth="max-w-md"
     >
-      <p className={`text-lg mb-8 ${bookingStatus.isSuccess ? "text-gray-700" : "text-red-700"}`}>
-        {bookingStatus.message}
-      </p>
-      <button
-        type="button"
-        onClick={onClose}
-        className="w-full py-3 rounded-xl bg-[#e67e22] text-white font-bold hover:brightness-110 transition-all"
-      >
-        {t("booking.done") || "Done"}
-      </button>
+      <div className="flex flex-col items-center text-center p-4">
+        {bookingStatus.isSuccess ? (
+          <motion.div
+            initial={{ scale: 0, rotate: -45 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6 border-4 border-green-100"
+          >
+            <Check size={40} className="text-green-600" strokeWidth={3} />
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ scale: 0, rotate: 45 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6 border-4 border-red-100"
+          >
+            <XCircle size={40} className="text-red-600" strokeWidth={2} />
+          </motion.div>
+        )}
+
+        <h3 className="text-2xl font-black text-gray-800 mb-2">
+          {bookingStatus.isSuccess 
+            ? (t("booking.confirmedTitle") || "Booking Confirmed!") 
+            : (t("booking.failedTitle") || "Booking Failed")}
+        </h3>
+
+        <p className={`text-sm font-semibold mb-8 leading-relaxed max-w-[280px] ${bookingStatus.isSuccess ? "text-gray-500" : "text-red-600"}`}>
+          {bookingStatus.message}
+        </p>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-4 rounded-2xl bg-[#e67e22] text-white font-black hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[#e67e22]/20"
+        >
+          {t("booking.done") || "Done"}
+        </button>
+      </div>
     </Modal>
   );
 }
+

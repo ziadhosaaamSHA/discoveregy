@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronLeft, Loader2, CheckCircle2, Trash2, Plus, X, MapPin } from "lucide-react";
+import { Search, ChevronLeft, Loader2, Plus, Check, XCircle } from "lucide-react";
 import { useLanguage } from "../../../../context/LanguageContext";
+import { motion } from "framer-motion";
 import * as createPlanBackend from "./backend/createPlanBackend";
 import GeneratedPlans from "./components/GeneratedPlans";
 import EditPlan from "./components/EditPlan";
@@ -49,17 +50,6 @@ function extractTripId(payload) {
   return findIdRecursive(payload);
 }
 
-function extractBookingId(payload) {
-  if (typeof payload === "number") return payload;
-  if (typeof payload === "string" && /^\d+$/.test(payload)) return Number(payload);
-  return findIdRecursive(payload);
-}
-
-function mapPaymentMethod(value) {
-  const normalized = String(value || "").toLowerCase();
-  return normalized === "visa" ? "Visa" : "Cash";
-}
-
 function createTimeOptions() {
   const options = [];
   for (let hour = 0; hour < 24; hour += 1) {
@@ -86,7 +76,7 @@ export default function CreatePlan() {
   const [selectedPlanId, setSelectedPlanId] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSubmittingPlan, setIsSubmittingPlan] = useState(false);
-  const [bookingStatus, setBookingStatus] = useState({ isOpen: false, isSuccess: false, message: "" });
+  const [saveStatus, setSaveStatus] = useState({ isOpen: false, isSuccess: false, message: "" });
   const [destinations, setDestinations] = useState(() => []);
   
   // Customizations for the selected plan
@@ -258,34 +248,19 @@ export default function CreatePlan() {
         })
       );
 
-      const bookingResponse = await createPlanBackend.createBooking({
-        planId: createdTripId,
-        guideId: null,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        numberOfPeople: Number(bookingInfo.numberOfPeople || 1),
-        paymentMethod: mapPaymentMethod(bookingInfo.paymentMethod),
-        usePoints: false,
-      });
+      localStorage.removeItem("current_booking_id");
+      localStorage.removeItem("selected_guide");
 
-      const bookingId = extractBookingId(bookingResponse);
-      if (bookingId) {
-        localStorage.setItem("current_booking_id", String(bookingId));
-        if (mapPaymentMethod(bookingInfo.paymentMethod) === "Visa") {
-          await createPlanBackend.payBooking({ bookingId });
-        }
-      }
-
-      setBookingStatus({
+      setSaveStatus({
         isOpen: true,
         isSuccess: true,
-        message: t("booking.confirmedTitle") || "Booking confirmed.",
+        message: t("createPlan.chooseGuideNext") || "Custom plan saved. Choose a guide to complete booking.",
       });
     } catch (error) {
-      setBookingStatus({
+      setSaveStatus({
         isOpen: true,
         isSuccess: false,
-        message: error?.message || "Booking failed. Please try again.",
+        message: error?.message || "Could not save custom plan. Please try again.",
       });
     } finally {
       setIsSubmittingPlan(false);
@@ -294,11 +269,14 @@ export default function CreatePlan() {
   const isDurationFilled = durationHours !== '' && durationHours !== null && durationHours !== undefined;
   return (
     <div className="min-h-screen bg-[#ead9c5] text-black font-sans pb-20" dir={isRTL ? "rtl" : "ltr"}>
-      <header className="p-6">
-        <div className="max-w-7xl mx-auto flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="hover:opacity-70 transition-opacity">
-            {isRTL ? <ChevronLeft size={28} className="rotate-180" /> : <ChevronLeft size={28} />}
-          </button>
+      <header className="max-w-7xl mx-auto px-6 pt-6 pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate(-1)} className="hover:opacity-70 transition-opacity" aria-label="Go Back">
+              {isRTL ? <ChevronLeft size={28} strokeWidth={1.5} className="rotate-180" /> : <ChevronLeft size={28} strokeWidth={1.5} />}
+            </button>
+            <h1 className="text-3xl font-black tracking-tight">{t("createPlan.title") || "Create Plan"}</h1>
+          </div>
           <img src="/images/DiscoverEgyptLogo.png" alt="Discover Egypt" className="h-16 w-auto" />
         </div>
       </header>
@@ -372,29 +350,58 @@ export default function CreatePlan() {
         )}
       </main>
       <Modal
-        isOpen={bookingStatus.isOpen}
+        isOpen={saveStatus.isOpen}
         onClose={() => {
-          const shouldNavigate = bookingStatus.isSuccess;
-          setBookingStatus({ isOpen: false, isSuccess: false, message: "" });
-          if (shouldNavigate) navigate("/tourist/home");
+          const shouldNavigate = saveStatus.isSuccess;
+          setSaveStatus({ isOpen: false, isSuccess: false, message: "" });
+          if (shouldNavigate) navigate("/tourist/available-guides?mode=custom");
         }}
-        title={bookingStatus.isSuccess ? (t("booking.confirmedTitle") || "Booking confirmed") : "Booking failed"}
+        title=""
         maxWidth="max-w-md"
       >
-        <p className={`text-lg mb-8 ${bookingStatus.isSuccess ? "text-gray-700" : "text-red-700"}`}>
-          {bookingStatus.message}
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            const shouldNavigate = bookingStatus.isSuccess;
-            setBookingStatus({ isOpen: false, isSuccess: false, message: "" });
-            if (shouldNavigate) navigate("/tourist/home");
-          }}
-          className="w-full py-3 rounded-xl bg-[#e67e22] text-white font-bold hover:brightness-110 transition-all"
-        >
-          {t("booking.done") || "Done"}
-        </button>
+        <div className="flex flex-col items-center text-center p-4">
+          {saveStatus.isSuccess ? (
+            <motion.div
+              initial={{ scale: 0, rotate: -45 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6 border-4 border-green-100"
+            >
+              <Check size={40} className="text-green-600" strokeWidth={3} />
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ scale: 0, rotate: 45 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6 border-4 border-red-100"
+            >
+              <XCircle size={40} className="text-red-600" strokeWidth={2} />
+            </motion.div>
+          )}
+
+          <h3 className="text-2xl font-black text-gray-800 mb-2">
+            {saveStatus.isSuccess 
+              ? (t("createPlan.planSavedTitle") || "Plan Saved!") 
+              : (t("createPlan.planSaveFailed") || "Plan Save Failed")}
+          </h3>
+
+          <p className={`text-sm font-semibold mb-8 leading-relaxed max-w-[280px] ${saveStatus.isSuccess ? "text-gray-500" : "text-red-600"}`}>
+            {saveStatus.message}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              const shouldNavigate = saveStatus.isSuccess;
+              setSaveStatus({ isOpen: false, isSuccess: false, message: "" });
+              if (shouldNavigate) navigate("/tourist/available-guides?mode=custom");
+            }}
+            className="w-full py-4 rounded-2xl bg-[#e67e22] text-white font-black hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[#e67e22]/20"
+          >
+            {saveStatus.isSuccess ? (t("availableGuides.title") || "Available Tour Guides") : (t("booking.done") || "Done")}
+          </button>
+        </div>
       </Modal>
     </div>
   );

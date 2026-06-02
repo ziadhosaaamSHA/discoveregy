@@ -11,6 +11,7 @@ export default function UpcomingTrips({
   t,
   requestCancelTrip,
   cancellingTripId,
+  onChat,
 }) {
   return (
     <section id="upcoming-trips" className="max-w-[1200px] mx-auto px-6 py-12 lg:pt-8 lg:pb-0">
@@ -58,15 +59,18 @@ export default function UpcomingTrips({
                   <p className="text-[#f2e0ca]/50 text-[10px] mt-1">{tDate}</p>
                 </div>
                  <div className="flex items-center gap-2">
-                   {trip.conversationId ? (
-                     <Link
-                       to={`/chats/${trip.conversationId}`}
-                       className="w-10 h-10 rounded-full bg-[#f2e0ca] flex items-center justify-center hover:bg-white transition-colors flex-shrink-0"
+                   {(trip.conversationId || trip.guideId) ? (
+                     <button
+                       type="button"
+                       onClick={() => onChat(trip)}
+                       className="w-10 h-10 rounded-full bg-[#f2e0ca] flex items-center justify-center hover:bg-white transition-colors flex-shrink-0 cursor-pointer"
+                       aria-label={t("chats.title") || "Chat"}
+                       title={t("chats.title") || "Chat"}
                      >
                        <MessageCircle size={18} className="text-[#154d7d]" />
-                     </Link>
+                     </button>
                    ) : (
-                     <div className="w-10 h-10 rounded-full bg-[#f2e0ca]/60 flex items-center justify-center flex-shrink-0">
+                     <div className="w-10 h-10 rounded-full bg-[#f2e0ca]/60 flex items-center justify-center flex-shrink-0" title="No chat guide assigned">
                        <MessageCircle size={18} className="text-[#154d7d]/60" />
                      </div>
                    )}

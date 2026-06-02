@@ -18,9 +18,8 @@ import Requests from "./pages/(protected)/guide/requests";
 import Chats from "./pages/(protected)/shared/chats";
 import Profile from "./pages/(protected)/shared/profile";
 import Notifications from "./pages/(protected)/shared/notifications";
-//import AdminDashboard from "./pages/protected/admin/dashboard";
 import AdminLogin from "./pages/auth/admin";
-import AdminDashboard from "./pages/public/admin";
+import AdminDashboard from "./pages/(protected)/admin/dashboard";
 import TouristLayout from "./pages/(protected)/tourist/layout";
 import GuideLayout from "./pages/(protected)/guide/layout";
 import SharedLayout from "./pages/(protected)/shared/layout";
@@ -48,7 +47,6 @@ const publicRoutes = [
   { path: "/guide/search", element: <SearchResults /> },
   { path: "/bookmarks", element: <Bookmarks /> },
   { path: "/demo", element: <Demo /> },
-  { path: "/admin", element: <AdminDashboard /> },
 ];
 
 const touristRoutes = [
@@ -71,8 +69,9 @@ const guideDefaultLayoutRoutes = [
   { path: "/requests", element: <Requests /> },
 ];
 
-// admin is exposed as a public route (see `publicRoutes`).
-// The admin default-layout protected route was removed so the page is accessible publicly.
+const adminRoutes = [
+  { path: "/admin", element: <AdminDashboard /> },
+];
 
 const sharedRoutes = [
   { path: "/profile", element: <Profile /> },
@@ -116,6 +115,12 @@ function App() {
                 <Route key={route.path} path={route.path} element={route.element} />
               ))}
             </Route>
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]} />}>
+            {adminRoutes.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
+            ))}
           </Route>
 
           {/* Shared protected pages wrapped in SharedLayout */}

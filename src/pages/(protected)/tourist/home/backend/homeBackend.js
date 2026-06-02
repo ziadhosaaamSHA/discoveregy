@@ -40,8 +40,8 @@ export async function getUpcomingTrips(user) {
     ? customTripsResponse.data
     : [];
 
-  const mappedBookings = source
-    .map((booking) => {
+  const mappedBookings = await Promise.all(source
+    .map(async (booking) => {
       const tripName =
         booking?.planName || booking?.tripTitle || booking?.planTitle || booking?.title || "";
       const planType = booking?.planType || "";
@@ -53,19 +53,39 @@ export async function getUpcomingTrips(user) {
       const bookingId = booking?.id;
       const status = String(booking?.status || "").toLowerCase();
 
+      const guideId = booking?.guideId || booking?.guide?.id || booking?.guide?.userId || null;
+      let conversationId = booking?.conversationId ? String(booking.conversationId) : null;
+
+      if (!conversationId && guideId) {
+        try {
+          const response = await tourismApi.createConversation({ guideId: Number(guideId) });
+          if (response) {
+            const cid = response.id ?? response.conversationId ?? response.data?.id ?? response.data?.conversationId;
+            if (cid) {
+              conversationId = String(cid);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to ensure conversation for guide", guideId, err);
+        }
+      }
+
       return {
         id: bookingId === undefined || bookingId === null ? "" : String(bookingId),
         guideName: { en: displayName, ar: displayName },
         guideImage: resolveApiAssetUrl(booking?.guideImageUrl || booking?.guide?.imageUrl),
         tripType: { en: tripName, ar: tripName },
         date: { en: formattedDate, ar: formattedDate },
-        conversationId: booking?.conversationId ? String(booking.conversationId) : null,
+        conversationId,
+        guideId: guideId ? String(guideId) : null,
         paymentMethod: booking?.paymentMethod || "",
         amount: Number.isFinite(amountValue) ? amountValue : null,
         status,
       };
     })
-    .filter((booking) => booking.id && booking.status !== "cancelled" && booking.status !== "rejected");
+  );
+  const filteredBookings = mappedBookings.filter((booking) => booking.id && booking.status !== "cancelled" && booking.status !== "rejected");
+
 
   const mappedCustomTrips = customSource
     .filter((trip) => typeof trip?.id === "number")
@@ -88,8 +108,16 @@ export async function getUpcomingTrips(user) {
     })
     .filter((trip) => trip.status !== "cancelled" && trip.status !== "rejected");
 
-  return [...mappedBookings, ...mappedCustomTrips];
+  return [...filteredBookings, ...mappedCustomTrips];
 }
+
+export async function getOrCreateConversation(guideId) {
+  if (!guideId) return null;
+  const response = await tourismApi.createConversation({ guideId: Number(guideId) });
+  const cid = response?.id ?? response?.conversationId ?? response?.data?.id ?? response?.data?.conversationId;
+  return cid ? String(cid) : null;
+}
+
 
 export async function cancelTrip(trip) {
   // Accepts the normalized trip object used by the UI and performs the

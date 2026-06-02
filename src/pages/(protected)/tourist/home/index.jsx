@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Star, MessageCircle, X } from "lucide-react";
 import { useLanguage } from "../../../../context/LanguageContext";
@@ -13,6 +13,7 @@ import { ACTIVITY_IDS, POPULAR_IDS } from "./components/homeCards";
 
 // TouristHome is the tourist dashboard with trips, activities, and destinations.
 export default function TouristHome() {
+  const navigate = useNavigate();
   const { isRTL, t, language } = useLanguage();
   const { user } = useAuth();
   const [destinations, setDestinations] = useState([]);
@@ -79,6 +80,26 @@ export default function TouristHome() {
     [destinations]
   );
   
+  const handleChat = async (trip) => {
+    if (trip.conversationId) {
+      navigate(`/chats/${trip.conversationId}`);
+      return;
+    }
+    if (trip.guideId) {
+      try {
+        const conversationId = await homeBackend.getOrCreateConversation(trip.guideId);
+        if (conversationId) {
+          navigate(`/chats/${conversationId}`);
+        } else {
+          navigate(`/chats/conv-${trip.guideId}`);
+        }
+      } catch (err) {
+        console.error("Failed to navigate/create conversation:", err);
+        navigate(`/chats/conv-${trip.guideId}`);
+      }
+    }
+  };
+
   const handleCancelTrip = async (trip) => {
     if (!trip?.id || cancellingTripId === trip.id) return;
     setCancellingTripId(trip.id);
@@ -143,6 +164,7 @@ export default function TouristHome() {
           t={t}
           requestCancelTrip={requestCancelTrip}
           cancellingTripId={cancellingTripId}
+          onChat={handleChat}
         />
 
         <ActivitiesSection activityDestinations={activityDestinations} isRTL={isRTL} t={t} />

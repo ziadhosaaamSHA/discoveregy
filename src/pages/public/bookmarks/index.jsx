@@ -88,19 +88,20 @@ export default function Bookmarks() {
               ? response.items
               : [];
 
+            const count = reviews.length;
             const average =
-              reviews.length > 0
+              count > 0
                 ? reviews.reduce(
                     (sum, review) =>
                       sum + Number(review?.rating || 0),
                     0
-                  ) / reviews.length
+                  ) / count
                 : null;
 
-            ratingsMap[destination.id] =
-              average !== null
-                ? average.toFixed(1)
-                : null;
+            ratingsMap[destination.id] = {
+              average: average !== null ? average.toFixed(1) : null,
+              count,
+            };
           } catch (error) {
             console.error(
               `Error fetching reviews for destination ${destination.id}:`,
@@ -245,7 +246,7 @@ export default function Bookmarks() {
                         />
 
                         <span className="text-sm font-medium text-secondary">
-                          {ratings[destination.id] ??
+                          {ratings[destination.id]?.average ??
                             (language === "ar"
                               ? "جارٍ التحميل..."
                               : "Loading...")}
@@ -253,12 +254,11 @@ export default function Bookmarks() {
                       </div>
 
                       <span className="text-muted text-sm">
-                        ({
-                          ratings[destination.id]?.length
-                            ? ratings[destination.id].length
-                            : language === "ar"
-                              ? "جارٍ التحميل..."
-                              : "Loading..."
+                        ({ratings[destination.id] !== undefined
+                          ? (ratings[destination.id]?.count ?? 0)
+                          : language === "ar"
+                            ? "جارٍ التحميل..."
+                            : "Loading..."
                         }
                         {t("destination.reviews")})
                       </span>

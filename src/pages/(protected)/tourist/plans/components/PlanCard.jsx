@@ -1,5 +1,6 @@
-import { CheckCircle2, MapPin, Trash2 } from "lucide-react";
+import { CheckCircle2, MapPin, Trash2, Wallet } from "lucide-react";
 import { resolveApiAssetUrl } from "@/services/api-client";
+import { formatAmount } from "./planUtils";
 
 
 function DestinationPreview({ destinationMap, destinationIds }) {
@@ -97,9 +98,20 @@ export function PlanCard({
 
         <div className={`absolute bottom-6 ${isRTL ? "right-8 text-right" : "left-8 text-left"}`}>
           <h3 className="text-3xl font-black text-white drop-shadow-md">{plan.title[language] || plan.title.en}</h3>
-          <div className="flex items-center gap-2 text-white/80 mt-1 font-bold">
-            <MapPin size={16} />
-            <span>{destinationIds.length} {t("plans.destinationsCount")}</span>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-white/90 font-bold">
+            <span className="inline-flex items-center gap-2 rounded-full bg-black/35 px-3 py-1 backdrop-blur-sm">
+              <MapPin size={16} />
+              <span>{destinationIds.length} {t("plans.destinationsCount")}</span>
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#e67e22] px-3 py-1 text-white shadow-lg">
+              <Wallet size={16} />
+              <span>{formatAmount(plan.price, language)}</span>
+            </span>
+            {plan.guideName && (
+              <span className="inline-flex rounded-full bg-white/20 px-3 py-1 text-sm backdrop-blur-sm">
+                {plan.guideName}
+              </span>
+            )}
           </div>
         </div>
       </div>
