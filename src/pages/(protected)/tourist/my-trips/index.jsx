@@ -23,6 +23,12 @@ import {
   Button,
 } from "../../../../components/ui";
 
+const INACTIVE_TRIP_STATUSES = new Set(["cancelled", "canceled", "rejected"]);
+
+function isInactiveTrip(trip) {
+  return INACTIVE_TRIP_STATUSES.has(String(trip?.status || "").toLowerCase());
+}
+
 export default function MyTrips() {
   const navigate = useNavigate();
   const { isRTL, language, t } = useLanguage();
@@ -30,7 +36,7 @@ export default function MyTrips() {
   const [trips, setTrips] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("all"); // "all" | "predefined" | "custom"
+  const [activeTab, setActiveTab] = useState("all"); // "all" | "predefined" | "custom" | "cancelled"
 
   // Cancellation States
   const [tripToCancel, setTripToCancel] = useState(null);
@@ -124,9 +130,21 @@ export default function MyTrips() {
   };
 
   const filteredTrips = useMemo(() => {
-    if (activeTab === "all") return trips;
-    return trips.filter((t) => t.planType === activeTab);
+    if (activeTab === "cancelled") {
+      return trips.filter(isInactiveTrip);
+    }
+
+    const activeTrips = trips.filter((trip) => !isInactiveTrip(trip));
+    if (activeTab === "all") return activeTrips;
+    return activeTrips.filter((trip) => trip.planType === activeTab);
   }, [trips, activeTab]);
+
+  const tripTabs = [
+    { id: "all", label: t("myTrips.tabs.all") || (language === "ar" ? "الرحلات النشطة" : "All Active") },
+    { id: "predefined", label: t("myTrips.tabs.predefined") || (language === "ar" ? "رحلات جاهزة" : "Ready Trips") },
+    { id: "custom", label: t("myTrips.tabs.custom") || (language === "ar" ? "خطط مخصصة" : "Custom Plans") },
+    { id: "cancelled", label: t("myTrips.tabs.cancelled") || (language === "ar" ? "الملغية / المرفوضة" : "Cancelled / Rejected") },
+  ];
 
   return (
     <div className="min-h-screen bg-[#ead9c5] pt-26 px-4 py-8 text-black font-sans pb-32" dir={isRTL ? "rtl" : "ltr"}>
@@ -142,31 +160,18 @@ export default function MyTrips() {
         </div>
 
         {/* Filters/Tabs */}
-        <div className="flex p-1 bg-black/5 rounded-full border border-black/5 self-center sm:self-auto">
-          <button
-            onClick={() => setActiveTab("all")}
-            className={`px-5 py-2 rounded-full text-xs font-black transition-all duration-300 ${
-              activeTab === "all" ? "bg-[#e67e22] text-white shadow-md" : "text-gray-700 hover:bg-black/5"
-            }`}
-          >
-            {language === "ar" ? "الكل" : "All"}
-          </button>
-          <button
-            onClick={() => setActiveTab("predefined")}
-            className={`px-5 py-2 rounded-full text-xs font-black transition-all duration-300 ${
-              activeTab === "predefined" ? "bg-[#e67e22] text-white shadow-md" : "text-gray-700 hover:bg-black/5"
-            }`}
-          >
-            {language === "ar" ? "رحلات جاهزة" : "Ready Trips"}
-          </button>
-          <button
-            onClick={() => setActiveTab("custom")}
-            className={`px-5 py-2 rounded-full text-xs font-black transition-all duration-300 ${
-              activeTab === "custom" ? "bg-[#e67e22] text-white shadow-md" : "text-gray-700 hover:bg-black/5"
-            }`}
-          >
-            {language === "ar" ? "خطط مخصصة" : "Custom Plans"}
-          </button>
+        <div className="flex flex-wrap justify-center p-1 bg-black/5 rounded-full border border-black/5 self-center sm:self-auto">
+          {tripTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 rounded-full text-xs font-black transition-all duration-300 ${
+                activeTab === tab.id ? "bg-[#e67e22] text-white shadow-md" : "text-gray-700 hover:bg-black/5"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </header>
 
@@ -208,7 +213,7 @@ export default function MyTrips() {
               className="grid grid-cols-1 md:grid-cols-2 gap-8"
             >
               {filteredTrips.map((trip) => {
-                const isCancelled = trip.status === "cancelled" || trip.status === "rejected";
+                const isCancelled = isInactiveTrip(trip);
                 const isPaid = trip.status === "paid" || trip.status === "confirmed";
 
                 return (

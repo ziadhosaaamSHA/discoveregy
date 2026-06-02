@@ -39,6 +39,12 @@ const TRANSLATIONS = {
     },
     myTrips: {
       title: "My Trips",
+      tabs: {
+        all: "All Active",
+        predefined: "Ready Trips",
+        custom: "Custom Plans",
+        cancelled: "Cancelled / Rejected",
+      },
     },
     tourist: {
       home: {
@@ -566,6 +572,12 @@ const TRANSLATIONS = {
     },
     myTrips: {
       title: "رحلاتي",
+      tabs: {
+        all: "الرحلات النشطة",
+        predefined: "رحلات جاهزة",
+        custom: "خطط مخصصة",
+        cancelled: "الملغية / المرفوضة",
+      },
     },
     tourist: {
       home: {
